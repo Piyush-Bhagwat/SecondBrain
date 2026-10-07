@@ -1,0 +1,13 @@
+   fastapi
+   uvicorn
+   python-dotenv
+   requests
+   pydantic
+   ollama
+   chromadb
+   google-genai
+   python-telegram-bot
+   faster-whisper
+   av<17
+   yt-dlp
+   youtube-transcript-api

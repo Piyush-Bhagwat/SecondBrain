@@ -1,0 +1,22 @@
+{
+  "id": "fac0a4764848-3",
+  "doc_id": "fac0a4764848",
+  "doc_title": "YouTube: Installing Claude Code",
+  "chunk": 3,
+  "source": "youtube",
+  "date": "2026-10-03T20:32:18",
+  "meta": {
+    "video_id": "0kILa02vKuI",
+    "url": "https://www.youtube.com/watch?v=0kILa02vKuI",
+    "channel": null
+  },
+  "title": "Installing Claude Code",
+  "content": "To feel more intertwined with your favorite code editor, Claude code can be installed. Desktop installation allows Claude to run in the background while other tasks are performed. Claude code on the web is suitable for remote work on projects through GitHub repositories or for parallel sessions. Installation choice is up to the user.",
+  "tags": [
+    "Claude Code",
+    "code editor",
+    "remote work",
+    "GitHub"
+  ],
+  "raw_text": "like Claude code to feel more intertwined with your favorite code editor. Desktop is great for letting Claude run in the background while you run other tasks. Claude code on the web is a great option if you want to remotely work on a project through a GitHub repository or have multiple sessions work in parallel. However, you want to use Claude code, it's up to you."
+}

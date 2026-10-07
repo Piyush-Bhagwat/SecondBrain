@@ -1,0 +1,22 @@
+{
+  "id": "42680e4a9f40-1",
+  "doc_id": "42680e4a9f40",
+  "doc_title": "YouTube: China just open-sourced a peanut-sized AI OCR model that parses entire 100-page PDFs in one shot.",
+  "chunk": 1,
+  "source": "youtube",
+  "date": "2026-10-03T20:20:00",
+  "meta": {
+    "video_id": "9eQpi-D9hYA",
+    "url": "https://www.youtube.com/watch?v=9eQpi-D9hYA",
+    "channel": "100x Engineers"
+  },
+  "title": "MIT-licensed AI OCR Model for PDFs",
+  "content": "China just open-sourced an AI OCR model that can parse entire 100-page PDFs in one shot. The model is MIT-licensed and free for commercial use. To try it, visit the link in the pinned comments.",
+  "tags": [
+    "AI",
+    "OCR",
+    "MIT License",
+    "PDF Parsing"
+  ],
+  "raw_text": "so your documents never leave your system. It's MIT-licensed and free for commercial use. So, you want to try it? The link is in the pinned comments."
+}

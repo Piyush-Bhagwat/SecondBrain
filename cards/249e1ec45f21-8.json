@@ -1,0 +1,34 @@
+{
+  "id": "249e1ec45f21-8",
+  "doc_id": "249e1ec45f21",
+  "doc_title": "YouTube: How Real Apps Are Built: System Design for the AI Era | Episode 1",
+  "chunk": 8,
+  "source": "youtube",
+  "date": "2026-10-06T11:51:20",
+  "meta": {
+    "video_id": "cMrILW6ZyjM",
+    "url": "https://www.youtube.com/watch?v=cMrILW6ZyjM",
+    "channel": null
+  },
+  "title": "Modern System Design for AI Era",
+  "content": "System designers consider various aspects including how much data to store, response speed, failure handling, scalability, security requirements, and cost. For AI systems, additional questions arise such as which model to use, whether AI needs memory, access to private data, RAG integration, tool calling, and automatic action performance. Questions also include how to evaluate AI responses and whether a human approval step is necessary. This series will cover concepts like load balancers, caching, databases, queues, microservices, and distributed systems, connecting them with large language models, RAGs, vector databases, AI agents, memory, tool calling, and MCPs.",
+  "tags": [
+    "system design",
+    "AI era",
+    "data storage",
+    "response time",
+    "failure handling",
+    "scalability",
+    "security",
+    "cost estimation",
+    "AI models",
+    "memory usage",
+    "private data",
+    "RAG integration",
+    "tool calling",
+    "automatic actions",
+    "response evaluation",
+    "human approval"
+  ],
+  "raw_text": "we expect? How much data will we store? How quickly should the system respond? What happens if something fails? Which parts need to scale? Where are the bottlenecks? How secure does this need to be? How much can this system cost? And now for AI system, we add more questions. Which model should we use? Does the AI need memory? Does it need access to private data? Do we need RAG? Can the AI use tools? Can it perform actions automatically? How do we evaluate its responses? What happens when the model hallucinates? Should there be a human approval step? This is the modern system design. So throughout this series we are going to slowly build this mental model We will understand things like load balancers, caching, databases, queues, microservices, distributed systems then we will connect them with large language models, RAGs, vector databases, AI agents, memory, tool calling, MCPs,"
+}

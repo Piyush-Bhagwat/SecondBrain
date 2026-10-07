@@ -1,0 +1,15 @@
+{
+  "id": "c06547b8b922-0",
+  "doc_id": "c06547b8b922",
+  "doc_title": "Piyush's notes: **Backend learning plan**",
+  "chunk": 0,
+  "source": "memory-import",
+  "date": "2026-10-03T16:05:01",
+  "title": "Backend Learning Plan",
+  "content": "Piyush aims to understand the rationale behind choosing one technology over another, not just how to use them. He is following a structured weekly, daily study method, with caching as the initial topic.",
+  "tags": [
+    "Piyush",
+    "Backend Learning Plan"
+  ],
+  "raw_text": "- Wants depth: to explain why one technology or approach beats another, not just use it\n- Working through a structured weekly, day-by-day study method. Caching is the first topic"
+}

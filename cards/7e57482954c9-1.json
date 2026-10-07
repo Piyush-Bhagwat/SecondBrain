@@ -1,0 +1,23 @@
+{
+  "id": "7e57482954c9-1",
+  "doc_id": "7e57482954c9",
+  "doc_title": "YouTube: Ornith 1.0 Beats Claude Opus 4.7 — and It's Free #aimodel #coding",
+  "chunk": 1,
+  "source": "youtube",
+  "date": "2026-10-03T20:19:21",
+  "meta": {
+    "video_id": "8Cw1jX6o9w0",
+    "url": "https://www.youtube.com/watch?v=8Cw1jX6o9w0",
+    "channel": null
+  },
+  "title": "Training an Open-Ended Model: Anomaly Detection",
+  "content": "An open-ended model named 'Open Earth' operates differently from traditional methods. Instead of using a human-written harness to guide the model, it writes its own scaffold for each step. The scaffold is used to solve a task, and the reward system trains both the scaffold and the model. To prevent cheating, the team locks the environment and adds a monitor that zeros out any trajectory that deviates from the expected path. Additionally, a frozen judge is implemented to ensure the model does not peek where it shouldn't. The 397 billion parameter model runs on data center hardware, while the 9 billion parameter model runs on a laptop. The 9 billion parameter model scores 69.4 on SweetBench and matches Gemma 4 at 31 billion parameters. Both models demonstrate the effectiveness of the method.",
+  "tags": [
+    "machine learning",
+    "model training",
+    "open-ended models",
+    "reward system",
+    "environment monitoring"
+  ],
+  "raw_text": "how does an open model catch Claude? Most training uses a human-written harness to steer the model. Open Earth throws that out. Each step, it writes its own scaffold, then solves the task, and the reward trains both. The orchestration that finds the answer, the model learns that, too. Now, letting a model write its own scaffold is dangerous. It can cheat. Read the test file, hardcode the answer, fake the pass. So, the team locks the environment, runs a monitor that zeros out any trajectory that peeks where it shouldn't, and adds a frozen judge on top. Self-improvement without the reward hacking. Now, the honest part. That 397 billion model runs on data center hardware, not your machine. But, the 9 billion size, it scores 69.4 on SweetBench verified and matches Gemma 4 at 31 billion. That one runs on your laptop. The big model proves the method. The"
+}

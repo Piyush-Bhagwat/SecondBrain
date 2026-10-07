@@ -1,0 +1,22 @@
+{
+  "id": "249e1ec45f21-5",
+  "doc_id": "249e1ec45f21",
+  "doc_title": "YouTube: How Real Apps Are Built: System Design for the AI Era | Episode 1",
+  "chunk": 5,
+  "source": "youtube",
+  "date": "2026-10-06T11:50:28",
+  "meta": {
+    "video_id": "cMrILW6ZyjM",
+    "url": "https://www.youtube.com/watch?v=cMrILW6ZyjM",
+    "channel": null
+  },
+  "title": "Challenges in Deploying AI Models",
+  "content": "Building an AI customer support agent works perfectly, answering questions with a few lines of code. However, deploying it to 100,000 customers reveals different problems. Ensuring the model provides correct information, handling model provider failures, and preventing malicious prompts are significant challenges. Managing memory and deciding which model answers which request are also crucial. Using powerful models for every message can be expensive. Deciding which actions require approval and monitoring the agent's performance are additional complexities.",
+  "tags": [
+    "AI development",
+    "model deployment",
+    "memory management",
+    "action approval"
+  ],
+  "raw_text": "different architectural problem Why calling an AI model isn't a hard part? And this is something that beginners sometimes misunderstand about AI development Making a model answer a question can literally take a few lines of code That's not necessarily the difficult part Imagine you are building an AI customer support agent The prototype works perfectly You ask it a question, it answers Amazing Now deploy to 100,000 customers Suddenly you have a different problem What if AI gives incorrect information? What if the model provider goes down? What if someone sends malicious prompt? What if the conversation becomes extremely long? Where do you store memory? How do you decide which model should answer which request? What if using the powerful model for every message becomes ridiculously expensive? What happens when AI wants to perform an action? Which action should require approval? How do you monitor what the agent is"
+}

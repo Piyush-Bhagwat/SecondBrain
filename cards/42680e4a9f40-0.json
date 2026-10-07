@@ -1,0 +1,22 @@
+{
+  "id": "42680e4a9f40-0",
+  "doc_id": "42680e4a9f40",
+  "doc_title": "YouTube: China just open-sourced a peanut-sized AI OCR model that parses entire 100-page PDFs in one shot.",
+  "chunk": 0,
+  "source": "youtube",
+  "date": "2026-10-03T20:19:53",
+  "meta": {
+    "video_id": "9eQpi-D9hYA",
+    "url": "https://www.youtube.com/watch?v=9eQpi-D9hYA",
+    "channel": "100x Engineers"
+  },
+  "title": "Baidu's Unlimited OCR Model",
+  "content": "Baidu, referred to as the Google of China, has open-sourced an AI OCR model named Unlimited OCR. This model is designed to process entire 100-page PDFs in one shot, with only 3 billion parameters. Unlike other OCR tools that break documents into pages and lose context, Unlimited OCR reads the entire document in a single pass. This model offers several benefits: it provides clean, structured text with all tables, headings, and clauses in their correct positions. It can handle scanned financial reports by preserving formulas, reading order, and layout. For developers, it eliminates the need for a messy preprocessing stack when dealing with PDFs. Additionally, Unlimited OCR runs entirely on local machines.",
+  "tags": [
+    "AI OCR",
+    "Baidu",
+    "PDF processing",
+    "local machine"
+  ],
+  "raw_text": "China just open-sourced a peanut-sized AI OCR model that passes entire 100-page PDFs in one shot. It's called Unlimited OCR, which only has 3 billion parameters, and it's developed by Baidu, which is called the Google of China. While every other OCR tool chops your document into pages and loses the thread, this one reads the whole thing in a single pass. So, here's what this actually means for you. Drop in a 40-page contract, and it gives you clean, structured text with every table, heading, and clause exactly where it should be. You can even feed it a scanned financial report, and it preserves formulas, reading order, and layout without you touching anything. If you're building a RAG pipeline or a document search tool, you no longer need a messy preprocessing stack just to handle PDFs cleanly. And the best part is it runs completely on your local machine,"
+}

@@ -1,0 +1,26 @@
+{
+  "id": "249e1ec45f21-3",
+  "doc_id": "249e1ec45f21",
+  "doc_title": "YouTube: How Real Apps Are Built: System Design for the AI Era | Episode 1",
+  "chunk": 3,
+  "source": "youtube",
+  "date": "2026-10-06T11:50:01",
+  "meta": {
+    "video_id": "cMrILW6ZyjM",
+    "url": "https://www.youtube.com/watch?v=cMrILW6ZyjM",
+    "channel": null
+  },
+  "title": "System Design for a Traditional Web Application",
+  "content": "Handle real-world workload, and your application will still fail. Simplify a traditional web application by imagining an online shopping website. The first interaction is with the frontend, what you see. A request for a product is sent to the backend server, which may need information about the product, so it queries the database. The database returns the information, and eventually, the response comes back to you. At a basic level, we have a user, frontend, backend, and database. However, real systems quickly become more complicated. A cache might be added to return frequently requested information faster. Multiple servers may be used, and a load balancer could distribute users between them. Tools that don't need to happen immediately might be needed, and separate services for users, payments, products, and notifications could be implemented. Suddenly, a simple application becomes complex.",
+  "tags": [
+    "system design",
+    "web application",
+    "frontend",
+    "backend",
+    "database",
+    "cache",
+    "load balancer",
+    "separate services"
+  ],
+  "raw_text": "handle the real-world workload, your application will still fail. Let's simplify a traditional web application Imagine you open an online shopping website The first thing you interact with is the frontend That's what you see You search for a product that request goes to the backend server The backend may need information about the product so it asks the database The database returns the information and eventually the response comes back to you So at very basic level we have user, frontend, backend, and database but real systems quickly become more complicated Maybe we add a cache so frequently requested information can be returned faster Maybe we have multiple servers Maybe we need a load balancer to distribute users between them Maybe we need tools for work that don't need to happen immediately Maybe we have separate services for users, payments, products and notifications And suddenly our simple application becomes"
+}

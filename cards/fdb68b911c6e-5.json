@@ -1,0 +1,21 @@
+{
+  "id": "fdb68b911c6e-5",
+  "doc_id": "fdb68b911c6e",
+  "doc_title": "YouTube: Every Claude Code Concept Explained in 9 Minutes (2026)",
+  "chunk": 5,
+  "source": "youtube",
+  "date": "2026-10-03T20:34:11",
+  "meta": {
+    "video_id": "qlT4NyuWClU",
+    "url": "https://www.youtube.com/watch?v=qlT4NyuWClU",
+    "channel": null
+  },
+  "title": "Claude Modes and Permissions",
+  "content": "Claude Modes and Permissions: \n\nClaude Modes are settings that change how much Claude asks for user approval. There are three modes: Manual, Accept edits, and Auto.\n\nManual mode asks for approval before every single change.\n\nAccept edits mode writes and edits files automatically without asking, but still asks before running other commands.\n\nAuto mode allows Claude to decide when to ask for approval, especially for risky commands.\n\nModes are used to set limits before things get crazy. Permissions control what Claude can touch on your machine. An allow list includes things Claude can always do without asking, and a deny list includes things it can never do. You can use /permissions to see and change those rules.",
+  "tags": [
+    "Claude Code",
+    "Permissions",
+    "Modes"
+  ],
+  "raw_text": "all your files and system. Maybe we should set some limits before things get crazy. Permissions. >> >> This is where you decide what Claude can touch on your machine. An allow list for things it can always do without asking, and a deny list for things it can never do. You can use a /permissions to see and change those rules. But, there is a faster way to do this. Modes. A mode is one setting that changes how much Claude asks you. There are a few of them. Manual. It asks you before every single change. Slower, but you approve everything. Accept edits. It writes and edits files automatically without asking. But, it will still ask before running other type of commands. Auto. Claude decides by itself when it actually needs to ask you. For risky commands. Plan. Here, Claude doesn't change anything. It reads your code and"
+}

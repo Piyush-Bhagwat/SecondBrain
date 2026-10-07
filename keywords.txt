@@ -1,0 +1,20 @@
+# topics I care about
+backend
+claude
+llm
+ai agents
+ai
+backend
+node.js
+system design
+redis
+docker
+second brain
+osho
+sprituality
+finance
+business
+growth mindset
+automation
+stoicism
+philosophy

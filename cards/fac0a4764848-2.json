@@ -1,0 +1,22 @@
+{
+  "id": "fac0a4764848-2",
+  "doc_id": "fac0a4764848",
+  "doc_title": "YouTube: Installing Claude Code",
+  "chunk": 2,
+  "source": "youtube",
+  "date": "2026-10-03T20:32:11",
+  "meta": {
+    "video_id": "0kILa02vKuI",
+    "url": "https://www.youtube.com/watch?v=0kILa02vKuI",
+    "channel": null
+  },
+  "title": "Installing and Using Claude Code",
+  "content": "To install and use Claude Code, follow these steps:\n1. When you reopen Cloud Desktop, you'll see the Cloud logo. This opens a pane for the terminal experience, which works alongside you.\n2. On Cloud Desktop, you can run Cloud Code. After installation and signing in, a toggle at the top with 'code' will appear, similar to the Claude chat side. It allows you to work in a specific folder, change permissions, and work in a cloud environment.\n3. On the web, you can access Claude Code by going to claude.ai/code. This works similarly to the desktop app.\n4. However, you are restricted to GitHub repositories only.\n5. For the fastest updates, the terminal is the best option. Features are shipped there the fastest. For most IDE integrations, the experiences are extremely similar whether using the IDE or the terminal.",
+  "tags": [
+    "Cloud Desktop",
+    "Claude Code",
+    "GitHub",
+    "terminal"
+  ],
+  "raw_text": "And when you reopen, you'll see the Cloud logo. This will open up a pane where you can see the terminal experience. And this will work alongside you. On Cloud Desktop, you can also run Cloud Code. After you install Cloud Desktop and signed in, you will see a toggle at the top that says code. The look and feel is similar to Claude chat side of things, but allows you to work in a specific folder, change permissions, and even work in a cloud environment. On the web, you can access Claude code by going to claude.ai/code. This works very similar to the desktop app. However, you're restricted to GitHub repositories only. If you want to constantly keep up to date with everything, the terminal is the best bet. Features ship there the fastest. For the most part, you'll have extremely similar experiences with the IDE integrations if you"
+}

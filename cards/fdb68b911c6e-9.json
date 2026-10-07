@@ -1,0 +1,22 @@
+{
+  "id": "fdb68b911c6e-9",
+  "doc_id": "fdb68b911c6e",
+  "doc_title": "YouTube: Every Claude Code Concept Explained in 9 Minutes (2026)",
+  "chunk": 9,
+  "source": "youtube",
+  "date": "2026-10-03T20:37:19",
+  "meta": {
+    "video_id": "qlT4NyuWClU",
+    "url": "https://www.youtube.com/watch?v=qlT4NyuWClU",
+    "channel": null
+  },
+  "title": "Cloud Code Concepts Explained",
+  "content": "Cloud Code can manage connections with /mcp. Skills, hooks, and MCPs are grouped into an app login. Cloud is now equipped to handle one task at a time, using sub agents. Each sub agent has its own context window and task, running in parallel. An important concept is work trees, which are isolated copies of a project. Each agent works on its own copy to avoid conflicts. After completion, results are merged. Sub agents are created by asking Cloud to tackle a task in parallel with multiple sub agents. This approach simplifies complex tasks. The concepts learned include /mcp, app login, sub agents, and work trees.",
+  "tags": [
+    "Cloud Code",
+    "sub agents",
+    "work trees",
+    "parallel processing"
+  ],
+  "raw_text": "You can manage those connections with /mcp. So, now we have skills, hooks, and MCPs. If you group all that into one package, you create something called app login. So, Cloud is pretty well equipped by now, but it's still doing one thing at a time. Sub agents. Cloud Code can launch sub agents. Each one gets its own context window, its own task, and they can run in parallel. An important concept when using sub agents is work trees. A Git work tree is an isolated copy of your project. Each agent should work on its own copy to avoid conflicts. And when they are done, you merge the results. To create sub agents, you just ask Cloud something like, \"Let's tackle this task in parallel with multiple sub agents.\" And with that, our adventure comes to an end. We learned a lot of concepts and collected a lot"
+}

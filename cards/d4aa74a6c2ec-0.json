@@ -1,0 +1,20 @@
+{
+  "id": "d4aa74a6c2ec-0",
+  "doc_id": "d4aa74a6c2ec",
+  "doc_title": "",
+  "chunk": 0,
+  "source": "web",
+  "date": "2026-10-03T17:05:33",
+  "title": "Using AI Effectively",
+  "content": "AI as Employee: Use Al for Boring, Repetitive Tasks. Delegate Decision Making to Humans. Use Al as a Second Brain by Collecting and Analyzing Information. Build a Cogni Layer to Store Conversations and Learning. Use Agent Orchestrators and Skills to Enhance Performance. Ensure Al Operates with Good Context.",
+  "tags": [
+    "AI",
+    "Employee",
+    "Decision Making",
+    "Second Brain",
+    "Cogni Layer",
+    "Agent Orchestrators",
+    "Skills"
+  ],
+  "raw_text": "How to use Al effectivly\n\n- Think of Al as employee not as ceo. Don't let it\n\ntake decision. Give him task to finish - boring, repetitive task should be given to Al - (search about agent, agen orchestration)\n\nlearn to give better context\n\nmake a second brain using LLMs. Try to build a\n\ncogni layer. Which will collect all that u consume. All the conversations u have with ai, youtube videos, and all this will run locally on a dedicated machine. You will need to know agent harness. Also learn how to make skills\n\n- Al is like super smart employee u hired from MIT, IIT but it will need good context to perform well."
+}

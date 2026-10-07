@@ -1,0 +1,23 @@
+{
+  "id": "fdb68b911c6e-0",
+  "doc_id": "fdb68b911c6e",
+  "doc_title": "YouTube: Every Claude Code Concept Explained in 9 Minutes (2026)",
+  "chunk": 0,
+  "source": "youtube",
+  "date": "2026-10-03T20:33:11",
+  "meta": {
+    "video_id": "qlT4NyuWClU",
+    "url": "https://www.youtube.com/watch?v=qlT4NyuWClU",
+    "channel": null
+  },
+  "title": "Explaining Claude Code Concepts",
+  "content": "In this video, Diego explains every Claude Code concept, including prompts and tokens, context windows, skills, hooks, sub agents, and more. He also mentions that once you understand the concept, using the commands makes more sense. By the end, viewers will have everything they need to use Claude Code better. Diego is a senior DevOps engineer from Paris who likes breaking down complex concepts into simple and visual explanations. He invites viewers to subscribe for more videos like this one.",
+  "tags": [
+    "Claude Code",
+    "AI coding agent",
+    "Anthropic",
+    "DevOps engineer",
+    "Diego"
+  ],
+  "raw_text": "Claude Code. In this video I'm going to explain every Claude Code concept. From prompts and tokens to context windows, skills, hooks, sub agents, and more. This is going to feel like an adventure. Along the way, we are going to collect commands for our inventory because once you understand the concept, using the commands makes more sense. And by the end, you will have everything you need to use Claude Code way better. My name is Diego. I'm a senior DevOps engineer based in Paris, and I like breaking down thick concepts into simple and visual explanations. If you want to see more videos like this one, feel free to subscribe. And that's all. Back to the video. Claude Code is an AI coding agent made by Anthropic. You give it instructions in natural language, and it reads your files, writes new code, edits existing code, and runs commands,"
+}

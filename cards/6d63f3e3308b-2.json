@@ -1,0 +1,22 @@
+{
+  "id": "6d63f3e3308b-2",
+  "doc_id": "6d63f3e3308b",
+  "doc_title": "YouTube: What is Claude Code?",
+  "chunk": 2,
+  "source": "youtube",
+  "date": "2026-10-03T20:32:56",
+  "meta": {
+    "video_id": "fl1DSmwQKKY",
+    "url": "https://www.youtube.com/watch?v=fl1DSmwQKKY",
+    "channel": null
+  },
+  "title": "Claude Code Overview",
+  "content": "Claude Code is an agentic coding tool designed to read, edit, and run files within a user's code base. It operates by finding strategic ways to answer questions without storing the entire code base in context. Claude Code also asks for permission before executing commands or making changes, ensuring user control. It can make mistakes, similar to any tool, and Claude Code is available for download in various platforms including terminal, VS Code, JetBrains, and the Claude desktop app. Quick recap: Claude Code is an agentic tool that helps users ship faster by connecting to external tools and managing their code base.",
+  "tags": [
+    "Claude Code",
+    "coding tool",
+    "permissions",
+    "mistakes"
+  ],
+  "raw_text": "lot, but not everything at once. This is where the agentic aspect of it comes in. Finding strategic ways to find the answers within your code base without storing your entire code base into context. Second is that it asks for permission. By default, Claude Code will ask you before running commands or making changes to your code base. You're always in control, whether that's being more hands-on or passive. Third, it can make mistakes. Just like any tool, Claude Code isn't perfect. It might misunderstand your intent, introduce a new bug, or over-engineer a solution. Quick recap. Claude Code is an agentic coding tool. It reads your code base, edits your files, runs commands, and connects to external tools to help you ship faster. You can download it today in your terminal, VS Code, JetBrains, and the Claude desktop app."
+}

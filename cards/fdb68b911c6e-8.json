@@ -1,0 +1,22 @@
+{
+  "id": "fdb68b911c6e-8",
+  "doc_id": "fdb68b911c6e",
+  "doc_title": "YouTube: Every Claude Code Concept Explained in 9 Minutes (2026)",
+  "chunk": 8,
+  "source": "youtube",
+  "date": "2026-10-03T20:37:05",
+  "meta": {
+    "video_id": "qlT4NyuWClU",
+    "url": "https://www.youtube.com/watch?v=qlT4NyuWClU",
+    "channel": null
+  },
+  "title": "Claude Code Concepts Explained",
+  "content": "Claude is not deterministic. Instead of depending on probabilities, one can guarantee actions by creating hooks. A hook is a script that runs automatically every time Claude does something specific. It has two parts: when it runs and what it runs. For example, if you want the test of your application to run every time Claude finishes a task, you can write that rule in Claude.md and hope Claude remembers. Most of the time it will. Alternatively, you can create a hook. When Claude finishes a task, it will run the script containing your tests every time with no exceptions. MCP, Model Context Protocol, is an open standard for connecting AI tools to external services. This allows one to use Claude code with tools like GitHub, Notion, Slack, and more.",
+  "tags": [
+    "Claude Code",
+    "hooks",
+    "MCP",
+    "external services"
+  ],
+  "raw_text": "cannot be 100% sure that Claude is going to do exactly what you asked. It's not deterministic. So instead of depending on probabilities, we can guarantee it. Hooks. A hook is a script that runs automatically every time Claude does something specific. A hook has two parts, when it runs and what it runs. Let's say you want the test of your application to run every time Claude finishes a task. You could write that rule in your Claude.md and hope Claude remembers. Most of the time it will. Most of the time. Or instead, you can create a hook. When Claude finishes a task, it will run the script containing your tests every time with no exceptions. Next, MCP, Model Context Protocol. MCP is an open standard for connecting AI tools to external services. This is how you You Claude code with tools like GitHub, Notion, Slack, and more."
+}

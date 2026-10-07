@@ -1,0 +1,22 @@
+{
+  "id": "249e1ec45f21-6",
+  "doc_id": "249e1ec45f21",
+  "doc_title": "YouTube: How Real Apps Are Built: System Design for the AI Era | Episode 1",
+  "chunk": 6,
+  "source": "youtube",
+  "date": "2026-10-06T11:50:43",
+  "meta": {
+    "video_id": "cMrILW6ZyjM",
+    "url": "https://www.youtube.com/watch?v=cMrILW6ZyjM",
+    "channel": null
+  },
+  "title": "System Design for AI Applications",
+  "content": "Understanding why a system design problem arises is crucial. These are not just model problems; they are system design problems. Additionally, AI does not replace traditional system design; rather, it builds upon existing infrastructure. Key components such as databases, APIs, authentication, security, caching, queues, observability, and scalable infrastructure are still essential. An AI engineer who focuses solely on models but lacks understanding of software architecture may face challenges. Conversely, a traditional software engineer who ignores AI architecture might miss how modern applications are evolving. The intersection between AI and traditional system design is interesting. For example, imagine someone asks to design something like ChatGPT. This thought experiment highlights the need for a combined understanding of both fields.",
+  "tags": [
+    "AI",
+    "system design",
+    "traditional engineering",
+    "modern applications"
+  ],
+  "raw_text": "doing? How do you know why it made a particular decision? These aren't really model problems, they are system design problems And there is another important point, AI does not replace traditional system design Actually the opposite is happening, all the old problems still exist still need databases, you still need APIs, you still need authentication, you still need security, you still need cache, you still need queues, observability, and you also need scalable infrastructure, we have simply added another powerful and sometimes unpredictable layer on top. So an AI engineer who understands only models but does not understand software architecture will eventually hit a wall. But a traditional software engineer who understands systems but completely ignores AI architecture may also miss how modern applications are changing. The interesting place is the intersection between the two. Let's do a tiny thought experiment. Imagine someone says, design something like ChatGPT. Your"
+}

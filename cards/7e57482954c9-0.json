@@ -1,0 +1,22 @@
+{
+  "id": "7e57482954c9-0",
+  "doc_id": "7e57482954c9",
+  "doc_title": "YouTube: Ornith 1.0 Beats Claude Opus 4.7 — and It's Free #aimodel #coding",
+  "chunk": 0,
+  "source": "youtube",
+  "date": "2026-10-03T20:18:59",
+  "meta": {
+    "video_id": "8Cw1jX6o9w0",
+    "url": "https://www.youtube.com/watch?v=8Cw1jX6o9w0",
+    "channel": null
+  },
+  "title": "Open Earth Model Comparison with Claude Opus",
+  "content": "An open-source model called Open Earth matched Claude Opus on coding tasks. It is available for download and has several advantages: it is 5 GB in size, does not require an API key or rate limits, and the weights are user-owned. Open Earth scored 77.5 on Terminal Bench and 82.4 on SweetBench, outperforming Claude Opus 4.7 which scored 70.3 and 80.8 respectively. Open Earth also outperformed other leading open models like MiniMax and DeepSeek across various benchmarks. Open Earth is available in four sizes: 9 billion, 31 billion, a mixture of experts, and a 397 billion flagship model. All models use the same training recipe.",
+  "tags": [
+    "open source model",
+    "Open Earth",
+    "Claude Opus",
+    "benchmark scores"
+  ],
+  "raw_text": "An open source model just matched Claude Opus on coding. And you can download it tonight. It's called Open Earth. And the team says it taught itself how to code. One command pulls it. Ollama run Open Earth. The 9 billion size is 5 GB. Small enough for a laptop. No API key. No rate limit. The weights are yours. Here's the part that turned heads. The flagship Open Earth scores 77.5 on Terminal Bench and 82.4 on SweetBench verified. Claude Opus 4.7 70.3 and 80.8. An open model sitting ahead on both. And it's not just two cherry-picked benchmarks. 78.9 on multilingual SweetBench. 77 on Claude Eval. It clears the leading open models its size like MiniMax and DeepSeek across the board. It ships in four sizes. 9 billion, 31 billion, a 35 billion mixture of experts, and a 397 billion flagship. Same training recipe top to bottom. So,"
+}
