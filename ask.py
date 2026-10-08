@@ -1,17 +1,26 @@
-import re
-
+import re, json, logging, sys
+from functools import lru_cache
 from dotenv import load_dotenv
 load_dotenv()
 
-import json
 import os
 from llm import client, LLM_MODEL, generate
 from store import collection, embed, CARDS_DIR
 from datetime import datetime as dt
 
+# Setup logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    handlers=[logging.StreamHandler(sys.stdout)]
+)
+logger = logging.getLogger("cogni-ask")
+
 MAX_DISTANCE = 0.48   # strict mode: any card included
 TOP_MAX = 0.40        # strict mode: best card must be at least this close
-core_personality = open("personality.txt", encoding="utf-8").read().strip()
+CORE_PERSONALITY = open("personality.txt", encoding="utf-8").read().strip()
+core_personality = CORE_PERSONALITY
+
 
 STRICT_PROMPT = """Answer the question using only the notes below.
 - Write a clear answer in full sentences, 2-5 sentences or a short list if the question asks for a list.
@@ -57,10 +66,9 @@ NOTES:
 
 MESSAGE: {question}"""
 
-
-
-
+@lru_cache(maxsize=128)
 def load(card_id):
+    # Cached JSON loading to avoid repeated disk reads for common cards
     return json.loads((CARDS_DIR / f"{card_id}.json").read_text())
 
 def retrieve(queries, k_each=3, max_distance=0.55):
@@ -73,12 +81,13 @@ def retrieve(queries, k_each=3, max_distance=0.55):
                 pairs.append((i, d))
     return pairs
 
-
 def answer_free(question: str):
+    logger.info(f"Processing free answer: {question[:50]}...")
     res = collection.query(query_embeddings=[embed(question, "search_query")], n_results=3)
     pairs = [(i, d) for i, d in zip(res["ids"][0], res["distances"][0]) if d <= 0.45]
     cards = [load(i) for i, _ in pairs]
     context = "\n\n".join(f"[{n+1}] {c['title']}\n{c['raw_text']}" for n, c in enumerate(cards)) or "(no relevant notes)"
+
     r = client.chat(
         model=LLM_MODEL,
         messages=[{"role": "user", "content": FREE_PROMPT.format(
@@ -91,15 +100,14 @@ def answer_free(question: str):
                for n, (c, (_, d)) in enumerate(zip(cards, pairs)) if (n + 1) in cited]
     return {"answer": text, "sources": sources}
 
-
-
 def answer(question: str, k: int = 3, mode: str = "strict"):
     if len(question.split()) < 3:
         return {"answer": "That's too short to search. Ask something more specific.", "sources": []}
-    
+
     if mode == "free":
         return answer_free(question)
 
+    logger.info(f"Retrieving context for {mode} answer...")
     if mode == "think":
         pairs = retrieve([question, "my goals, skills and interests"], k_each=4)
         if not pairs:
@@ -116,16 +124,55 @@ def answer(question: str, k: int = 3, mode: str = "strict"):
                for n, (c, (_, d)) in enumerate(zip(cards, pairs))]
 
     if mode == "think":
-        print("Using Gemini for thinking...")
-        text = generate(THINK_PROMPT.format(core_personality=core_personality, date=dt.now(), context=context, question=question))   # Gemini
+        logger.info("Calling Gemini for Thinking mode...")
+        text = generate(THINK_PROMPT.format(core_personality=core_personality, date=dt.now(), context=context, question=question))
     else:
-        print("Thinking...")
+        logger.info("Calling local LLM for Strict mode...")
         r = client.chat(model=LLM_MODEL,
                         messages=[{"role": "user", "content": STRICT_PROMPT.format(core_personality=core_personality, date=dt.now(), context=context, question=question)}],
-                        options={"temperature": 0, "num_ctx": 4096})                
+                        options={"temperature": 0, "num_ctx": 4096})
         text = r.message.content
 
     return {"answer": text, "sources": sources}
+
+def summarize_briefing(cards: list):
+    """Generates a summary of recent knowledge."""
+    if not cards:
+        return "No new knowledge stored in the last 24 hours."
+
+    context = "\n\n".join(f"- {c['title']}: {c['content']}" for c in cards)
+    prompt = f"""You are Piyush's personal memory assistant.
+Below is a list of things Piyush learned or stored in the last 24 hours:
+
+{context}
+
+Please provide a cohesive, encouraging daily briefing.
+- Summarize the main themes.
+- Group related items.
+- Keep it concise and formatted for Telegram (use <b>, <i>, <ul>).
+- End with a thoughtful question or a "Connecting the dots" insight.
+"""
+    return generate(prompt)
+
+def find_connection(new_card, existing_cards):
+    """Analyzes a new card against existing ones to find insights."""
+    if not existing_cards:
+        return None
+
+    context = "\n\n".join(f"Note [{n+1}]: {c['title']}\n{c['content']}" for n, c in enumerate(existing_cards))
+    prompt = f"""You are an insight agent. A new note was just added to the memory:
+NEW NOTE: {new_card['title']} - {new_card['content']}
+
+EXISTING NOTES:
+{context}
+
+Does the new note connect to, expand, or contradict any of the existing notes in a non-obvious way?
+- If yes, write a one-sentence insight: "Insight: [The connection]".
+- If no, respond with 'NONE'.
+Be concise. Focus on synthesis.
+"""
+    res = generate(prompt)
+    return res if "NONE" not in res.upper() else None
 
 if __name__ == "__main__":
     out = answer(input("Question: "))

@@ -1,11 +1,15 @@
-from dotenv import load_dotenv
-load_dotenv()
-
-import fcntl
-import os, re, sys, json, pathlib, subprocess, requests
+import re, json, logging, sys, asyncio, httpx, os, pathlib, subprocess
 from pydantic import BaseModel
 from youtube_transcript_api import YouTubeTranscriptApi
 from llm import client, LLM_MODEL
+
+# Setup logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    handlers=[logging.StreamHandler(sys.stdout)]
+)
+logger = logging.getLogger("cogni-ingest")
 
 API = os.getenv("COGNI_API", "http://localhost:8000")
 TOKEN = os.environ["TELEGRAM_TOKEN"]
@@ -19,12 +23,13 @@ STATE = pathlib.Path("yt_state.json")
 SKIPPED_LOG = pathlib.Path("yt_skipped.log")
 DRY = "--dry" in sys.argv
 
-def notify(msg: str):
+async def notify(msg: str):
     try:
-        requests.post(f"https://api.telegram.org/bot{TOKEN}/sendMessage",
-                      json={"chat_id": CHAT_ID, "text": msg}, timeout=30)
+        async with httpx.AsyncClient() as client:
+            await client.post(f"https://api.telegram.org/bot{TOKEN}/sendMessage",
+                             json={"chat_id": CHAT_ID, "text": msg}, timeout=30)
     except Exception as e:
-        print("Telegram notify failed:", e)
+        logger.error(f"Telegram notify failed: {e}")
 
 def load_keywords():
     lines = pathlib.Path("keywords.txt").read_text(encoding="utf-8").splitlines()
@@ -50,33 +55,40 @@ def fetch_history(n):
 class Verdict(BaseModel):
     relevant: bool
 
-def is_relevant(title, channel, keywords):
-    for k in keywords:                       # cheap exact match first
+async def is_relevant(title, channel, keywords):
+    for k in keywords:
         if re.search(rf"\b{re.escape(k)}\b", title, re.I):
             return True
     prompt = (f"Topics I care about: {', '.join(keywords)}\n\n"
               f"Video title: {title}\nChannel: {channel}\n\n"
               "Is this video clearly about one of these topics? "
               "Answer relevant=true only if the title or channel clearly indicates it, otherwise false.")
-    r = client.chat(model=LLM_MODEL, messages=[{"role": "user", "content": prompt}],
-                    format=Verdict.model_json_schema(), options={"temperature": 0})
-    return Verdict.model_validate_json(r.message.content).relevant
 
-def get_transcript(vid):
+    # Run blocking LLM call in thread
+    def _call():
+        r = client.chat(model=LLM_MODEL, messages=[{"role": "user", "content": prompt}],
+                        format=Verdict.model_json_schema(), options={"temperature": 0})
+        return Verdict.model_validate_json(r.message.content).relevant
+
+    return await asyncio.to_thread(_call)
+
+async def get_transcript(vid):
     try:
-        t = YouTubeTranscriptApi().fetch(vid, languages=["en", "hi"])
+        # Transcript API is sync
+        t = await asyncio.to_thread(YouTubeTranscriptApi().fetch, vid, languages=["en", "hi"])
         text = " ".join(s.text for s in t)
         return re.sub(r"\s+", " ", re.sub(r"\[.*?\]", "", text)).strip()
     except Exception as e:
-        print(f"  no transcript for {vid}: {str(e)[:80]}")
+        logger.warning(f"No transcript for {vid}: {str(e)[:80]}")
         return None
 
 def to_paragraphs(text, size=150):
     words = text.split()[:MAX_WORDS]
     return "\n\n".join(" ".join(words[i:i + size]) for i in range(0, len(words), size))
 
-def save_video(v, text):
-    r = requests.post(f"{API}/save", timeout=7200, json={
+async def save_video(client, v, text):
+    # Using httpx for async request
+    r = await client.post(f"{API}/save", timeout=7200, json={
         "text": text,
         "title": f"YouTube: {v['title']}",
         "source": "youtube",
@@ -87,69 +99,96 @@ def save_video(v, text):
     r.raise_for_status()
     return r.json()["saved"]
 
-def main():
+async def process_video(v, keywords, seen, http_client, stats):
+    vid = v["id"]
+    if vid in seen:
+        return
+
+    title = v.get("title") or ""
+    channel = v.get("channel") or v.get("uploader") or ""
+
+    if not await is_relevant(title, channel, keywords):
+        with SKIPPED_LOG.open("a", encoding="utf-8") as f:
+            f.write(f"{vid} | {title}\n")
+        mark_seen(seen, vid)
+        return
+
+    stats["relevant"] += 1
+    dur = v.get("duration")
+    if dur and dur > MAX_MINUTES * 60:
+        stats["too_long"] += 1
+        mark_seen(seen, vid)
+        return
+
+    if DRY:
+        logger.info(f"WOULD INGEST: {title}")
+        return
+
+    text = await get_transcript(vid)
+    if not text:
+        stats["no_transcript"] += 1
+        return
+
+    try:
+        saved_count = await save_video(http_client, v, to_paragraphs(text))
+        stats["cards"] += saved_count
+        mark_seen(seen, vid)
+        logger.info(f"Saved: {title} ({saved_count} cards)")
+    except Exception as e:
+        stats["failed"] += 1
+        logger.error(f"Save failed for {title}: {e}")
+
+async def main():
     keywords = load_keywords()
-    stats = dict(checked=0, relevant=0, cards=0, no_transcript=0, too_long=0, failed=0)
+    stats = {"checked": 0, "relevant": 0, "cards": 0, "no_transcript": 0, "too_long": 0, "failed": 0}
+
     if not DRY:
-        requests.get(API, timeout=10)        # fails early if the API isn't running
-    seen = load_seen()
-
-    for v in fetch_history(MAX_HISTORY):
-        vid = v["id"]
-        if vid in seen:
-            continue
-        stats["checked"] += 1
-        title = v.get("title") or ""
-        channel = v.get("channel") or v.get("uploader") or ""
-
-        if not is_relevant(title, channel, keywords):
-            with SKIPPED_LOG.open("a", encoding="utf-8") as f:
-                f.write(f"{vid} | {title}\n")
-            mark_seen(seen, vid)
-            continue
-        stats["relevant"] += 1
-
-        dur = v.get("duration")
-        if dur and dur > MAX_MINUTES * 60:
-            stats["too_long"] += 1
-            mark_seen(seen, vid)
-            continue
-
-        if DRY:
-            print("WOULD INGEST:", title)
-            continue
-
-        text = get_transcript(vid)
-        if not text:
-            stats["no_transcript"] += 1     # not marked seen: retried next run
-            continue
         try:
-            stats["cards"] += save_video(v, to_paragraphs(text))
-            mark_seen(seen, vid)
-            print("saved:", title)
-        except Exception as e:
-            stats["failed"] += 1
-            print("save failed:", title, e)
+            async with httpx.AsyncClient() as client:
+                await client.get(API, timeout=10)
+        except Exception:
+            logger.error("API is not running. Exiting.")
+            return
+
+    seen = load_seen()
+    history = fetch_history(MAX_HISTORY)
+
+    async with httpx.AsyncClient() as http_client:
+        # Process videos concurrently in batches to avoid overloading local LLM/API
+        # Batch size of 3 is safe for Ryzen 5 / 8GB RAM
+        batch_size = 3
+        for i in range(0, len(history), batch_size):
+            batch = history[i:i + batch_size]
+            tasks = []
+            for v in batch:
+                stats["checked"] += 1
+                tasks.append(process_video(v, keywords, seen, http_client, stats))
+
+            await asyncio.gather(*tasks)
 
     msg = (f"YouTube sync done: {stats['checked']} new in history, {stats['relevant']} relevant, "
            f"{stats['cards']} cards saved, {stats['no_transcript']} without captions, "
            f"{stats['too_long']} too long, {stats['failed']} failed.")
-    print(msg)
+    logger.info(msg)
     if not DRY:
-        notify(msg)
+        await notify(msg)
 
 if __name__ == "__main__":
+    import os, pathlib, subprocess
+    # Fix missing imports from previous Read
+    import os, re, sys, json, pathlib, subprocess, asyncio, httpx
+
     try:
         fd = os.open("yt_sync.lock", os.O_CREAT | os.O_EXCL | os.O_WRONLY)
     except FileExistsError:
-        notify("A YouTube sync is already running. Skipped this one.")
+        # notify is async now
+        asyncio.run(notify("A YouTube sync is already running. Skipped this one."))
         sys.exit(0)
     try:
-        main()
+        asyncio.run(main())
     except Exception as e:
-        print("ERROR:", e)
-        if not DRY:
-            notify(f"YouTube sync failed: {str(e)[:300]}")
+        logger.exception("Critical sync error")
+        asyncio.run(notify(f"YouTube sync failed: {str(e)[:300]}"))
     finally:
         os.close(fd)
         os.remove("yt_sync.lock")

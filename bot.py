@@ -141,8 +141,11 @@ async def send(update: Update, text: str):
         except Exception:
             await update.message.reply_text(chunk)   # plain text fallback
 
-def call(path, payload):
-    r = requests.post(f"{API}{path}", json=payload, timeout=900)
+def call(path, payload, type = "post"):
+    if type == "post":
+        r = requests.post(f"{API}{path}", json=payload, timeout=900)
+    else:
+        r = requests.get(f"{API}{path}", params=payload, timeout=900)
     r.raise_for_status()
     return r.json()
 
@@ -166,7 +169,10 @@ async def save_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Saving...")
     try:
         d = await asyncio.to_thread(call, "/save", {"text": text, "title": ""})
-        await update.message.reply_text(f"Saved {d['saved']} card(s):\n" + "\n".join(d["titles"]))
+        msg = f"Saved {d['saved']} card(s):\n" + "\n".join(d["titles"])
+        if "connection" in d:
+            msg += f"\n\n💡 {d['connection']}"
+        await update.message.reply_text(msg)
     except Exception as e:
         await update.message.reply_text(f"Failed: {e}")
 
@@ -200,6 +206,30 @@ async def plain_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def free_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await ask_cmd(update, context, mode="free")
 
+async def brief_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not await allowed(update):
+        return
+    await update.message.reply_text("Gathering your daily briefing...")
+    try:
+        d = await asyncio.to_thread(call, "/brief", {}, type="get")
+        await send(update, d["briefing"])
+    except Exception as e:
+        await update.message.reply_text(f"Failed to get briefing: {e}")
+
+async def review_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not await allowed(update):
+        return
+    try:
+        d = await asyncio.to_thread(call, "/review", {}, type="get")
+        if not d.get("card"):
+            await update.message.reply_text("No cards found in memory.")
+            return
+        card = d["card"]
+        msg = f"<b>Memory Jogger:</b>\n\n<i>{card['title']}</i>\n\n{card['content']}"
+        await send(update, msg)
+    except Exception as e:
+        await update.message.reply_text(f"Failed to review: {e}")
+
 
 app = ApplicationBuilder().token(TOKEN).build()
 app.add_handler(CommandHandler("save", save_cmd))
@@ -207,6 +237,8 @@ app.add_handler(CommandHandler("sync_youtube", sync_youtube_cmd))
 app.add_handler(CommandHandler("ask", ask_cmd))
 app.add_handler(CommandHandler("free", free_cmd))
 app.add_handler(CommandHandler("think", think_cmd))
+app.add_handler(CommandHandler("brief", brief_cmd))
+app.add_handler(CommandHandler("review", review_cmd))
 app.add_handler(CallbackQueryHandler(voice_confirm, pattern=r"^v[sd]:"))
 app.add_handler(MessageHandler(filters.VOICE | filters.AUDIO, voice_msg))
 app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, plain_text))

@@ -8,3 +8,18 @@ YouTube sync done: 0 new in history, 0 relevant, 0 cards saved, 0 without captio
   no transcript for Ss7nXHxaJPk: 
 Could not retrieve a transcript for the video https://www.youtube.com/watch?v=S
 YouTube sync done: 5 new in history, 1 relevant, 0 cards saved, 1 without captions, 0 too long, 0 failed.
+Traceback (most recent call last):
+  File "/home/piyush/Coding/Cogni/ingest.py", line 14, in <module>
+    API = os.getenv("COGNI_API", "http://localhost:8000")
+          ^^
+NameError: name 'os' is not defined. Did you forget to import 'os'?
+2026-10-08 22:11:08,218 [INFO] HTTP Request: POST https://api.telegram.org/bot8862055785:AAGwqFHPnam_J6vS12e_GgVmKCApoM3s8zM/sendMessage "HTTP/1.1 200 OK"
+2026-10-08 22:12:55,383 [INFO] HTTP Request: GET http://localhost:8000 "HTTP/1.1 200 OK"
+2026-10-08 22:13:03,500 [INFO] HTTP Request: POST http://localhost:11434/api/chat "HTTP/1.1 200 OK"
+2026-10-08 22:21:02,115 [INFO] HTTP Request: POST http://localhost:8000/save "HTTP/1.1 500 Internal Server Error"
+2026-10-08 22:21:02,115 [ERROR] Save failed for Every Way to Get 128GB of VRAM for Local AI: Server error '500 Internal Server Error' for url 'http://localhost:8000/save'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/500
+2026-10-08 22:21:03,582 [INFO] HTTP Request: POST http://localhost:11434/api/chat "HTTP/1.1 200 OK"
+2026-10-08 22:21:05,189 [INFO] HTTP Request: POST http://localhost:11434/api/chat "HTTP/1.1 200 OK"
+2026-10-08 22:21:05,190 [INFO] YouTube sync done: 10 new in history, 1 relevant, 0 cards saved, 0 without captions, 0 too long, 1 failed.
+2026-10-08 22:21:06,691 [INFO] HTTP Request: POST https://api.telegram.org/bot8862055785:AAGwqFHPnam_J6vS12e_GgVmKCApoM3s8zM/sendMessage "HTTP/1.1 200 OK"
