@@ -1,5 +1,5 @@
 import re, json, logging, sys
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from store import save, delete_card, CARDS_DIR
@@ -7,6 +7,19 @@ from ask import answer, load
 import asyncio
 import aiofiles
 import time
+import trafilatura
+from PyPDF2 import PdfReader
+import io
+
+# Setup professional logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    handlers=[logging.StreamHandler(sys.stdout)]
+)
+logger = logging.getLogger("cogni-api")
+
+app = FastAPI()
 
 # Setup professional logging
 logging.basicConfig(
@@ -90,6 +103,46 @@ async def remove_card(card_id: str):
         raise HTTPException(404, "not found")
 
     return {"deleted": card_id}
+
+@app.post("/save_url")
+async def save_url(url: str):
+    logger.info(f"Processing URL: {url}")
+    try:
+        downloaded = trafilatura.fetch_url(url)
+        if not downloaded:
+            raise HTTPException(400, "Could not fetch URL content")
+
+        text = trafilatura.extract(downloaded)
+        if not text:
+            raise HTTPException(400, "Could not extract meaningful text from URL")
+
+        # Use existing save logic
+        cards = await asyncio.to_thread(save, text, source="url", title=url)
+        return {"saved": len(cards), "titles": [c["title"] for c in cards]}
+    except Exception as e:
+        logger.error(f"URL save failed: {e}")
+        raise HTTPException(500, f"URL processing failed: {str(e)}")
+
+@app.post("/save_pdf")
+async def save_pdf(file: UploadFile = File(...)):
+    logger.info(f"Processing PDF: {file.filename}")
+    try:
+        content = await file.read()
+        pdf_file = io.BytesIO(content)
+        reader = PdfReader(pdf_file)
+
+        text = ""
+        for page in reader.pages:
+            text += page.extract_text() + "\n\n"
+
+        if not text.strip():
+            raise HTTPException(400, "PDF contains no extractable text")
+
+        cards = await asyncio.to_thread(save, text, source="pdf", title=file.filename)
+        return {"saved": len(cards), "titles": [c["title"] for c in cards]}
+    except Exception as e:
+        logger.error(f"PDF save failed: {e}")
+        raise HTTPException(500, f"PDF processing failed: {str(e)}")
 
 @app.get("/brief")
 async def get_briefing():

@@ -43,8 +43,31 @@ async def voice_msg(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not await allowed(update):
         return
     m = update.message
+
+    # Handle Document (PDF) uploads
+    if m.document:
+        if m.document.mime_type == "application/pdf":
+            await m.reply_text("Processing PDF...")
+            try:
+                tg_file = await m.document.get_file()
+                # Use a temporary file for upload
+                with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as tmp:
+                    await tg_file.download_to_drive(tmp.name)
+                    tmp_path = tmp.name
+
+                # We need to send this as a file to /save_pdf
+                # Since the current 'call' function only does JSON POST,
+                # we need a specialized function for file uploads.
+                d = await asyncio.to_thread(call_pdf, tmp_path)
+                await m.reply_text(f"Saved {d['saved']} cards from PDF:\n" + "\n".join(d["titles"]))
+                os.remove(tmp_path)
+                return
+            except Exception as e:
+                await m.reply_text(f"Failed to process PDF: {e}")
+                return
+
     media = m.voice or m.audio
-    if media.duration and media.duration > 600:
+    if media and media.duration and media.duration > 600:
         await m.reply_text("Too long (max 10 minutes).")
         return
     await m.reply_text("Transcribing...")
@@ -141,6 +164,20 @@ async def send(update: Update, text: str):
         except Exception:
             await update.message.reply_text(chunk)   # plain text fallback
 
+def call_pdf(path):
+    with open(path, "rb") as f:
+        files = {"file": (os.path.basename(path), f, "application/pdf")}
+        r = requests.post(f"{API}/save_pdf", files=files, timeout=900)
+        r.raise_for_status()
+        return r.json()
+
+def call_url(path, params):
+    # /save_url in api.py uses query params for the 'url' argument
+    query = "&".join([f"{k}={requests.utils.quote(v)}" for k, v in params.items()])
+    r = requests.post(f"{API}{path}?{query}", timeout=900)
+    r.raise_for_status()
+    return r.json()
+
 def call(path, payload, type = "post"):
     if type == "post":
         r = requests.post(f"{API}{path}", json=payload, timeout=900)
@@ -201,7 +238,24 @@ async def think_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def plain_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not await allowed(update):
         return
-    await ask_cmd(update, context, mode="strict", q=update.message.text.strip())
+
+    text = update.message.text.strip()
+
+    # Detect URL
+    if re.match(r"^https?://\S+", text):
+        await update.message.reply_text("Parsing URL...")
+        try:
+            # Using a dummy payload since /save_url takes a query param in our implementation
+            # Wait, we should check if we want it as a POST with body or GET.
+            # In api.py I used @app.post("/save_url") which defaults to query params for simple types.
+            # Let's use a helper to call the API.
+            d = await asyncio.to_thread(call_url, "/save_url", {"url": text})
+            await update.message.reply_text(f"Saved {d['saved']} cards from link:\n" + "\n".join(d["titles"]))
+        except Exception as e:
+            await update.message.reply_text(f"Failed to parse URL: {e}")
+        return
+
+    await ask_cmd(update, context, mode="strict", q=text)
 
 async def free_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await ask_cmd(update, context, mode="free")
