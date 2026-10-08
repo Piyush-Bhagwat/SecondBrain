@@ -1,3 +1,5 @@
+import re
+
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -44,6 +46,20 @@ REQUEST: {question}
 META_DATA: {date: {date}}
 """
 
+FREE_PROMPT = """You are a helpful assistant running locally for Piyush. Answer his message using your own general knowledge.
+Below are optional notes from his personal memory. Use them only if they clearly help with the message, and ignore them otherwise. Do not mention the notes unless you used them; if you did, cite them like [1].
+Be concise. If you are not sure about something, say so instead of guessing. Plain text for Telegram: only <b>, <i> and <code> tags, no markdown, no headings, no tables.
+
+CORE PERSONALITY: {core_personality}
+
+NOTES:
+{context}
+
+MESSAGE: {question}"""
+
+
+
+
 def load(card_id):
     return json.loads((CARDS_DIR / f"{card_id}.json").read_text())
 
@@ -57,9 +73,32 @@ def retrieve(queries, k_each=3, max_distance=0.55):
                 pairs.append((i, d))
     return pairs
 
+
+def answer_free(question: str):
+    res = collection.query(query_embeddings=[embed(question, "search_query")], n_results=3)
+    pairs = [(i, d) for i, d in zip(res["ids"][0], res["distances"][0]) if d <= 0.45]
+    cards = [load(i) for i, _ in pairs]
+    context = "\n\n".join(f"[{n+1}] {c['title']}\n{c['raw_text']}" for n, c in enumerate(cards)) or "(no relevant notes)"
+    r = client.chat(
+        model=LLM_MODEL,
+        messages=[{"role": "user", "content": FREE_PROMPT.format(
+            core_personality=core_personality, context=context, question=question)}],
+        options={"temperature": 0.7, "num_ctx": 4096},
+    )
+    text = r.message.content
+    cited = {int(n) for n in re.findall(r"\[(\d+)\]", text)}
+    sources = [{"n": n + 1, "title": c["title"], "distance": round(d, 2)}
+               for n, (c, (_, d)) in enumerate(zip(cards, pairs)) if (n + 1) in cited]
+    return {"answer": text, "sources": sources}
+
+
+
 def answer(question: str, k: int = 3, mode: str = "strict"):
     if len(question.split()) < 3:
         return {"answer": "That's too short to search. Ask something more specific.", "sources": []}
+    
+    if mode == "free":
+        return answer_free(question)
 
     if mode == "think":
         pairs = retrieve([question, "my goals, skills and interests"], k_each=4)

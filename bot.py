@@ -197,10 +197,15 @@ async def plain_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     await ask_cmd(update, context, mode="strict", q=update.message.text.strip())
 
+async def free_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await ask_cmd(update, context, mode="free")
+
+
 app = ApplicationBuilder().token(TOKEN).build()
 app.add_handler(CommandHandler("save", save_cmd))
 app.add_handler(CommandHandler("sync_youtube", sync_youtube_cmd))
 app.add_handler(CommandHandler("ask", ask_cmd))
+app.add_handler(CommandHandler("free", free_cmd))
 app.add_handler(CommandHandler("think", think_cmd))
 app.add_handler(CallbackQueryHandler(voice_confirm, pattern=r"^v[sd]:"))
 app.add_handler(MessageHandler(filters.VOICE | filters.AUDIO, voice_msg))
