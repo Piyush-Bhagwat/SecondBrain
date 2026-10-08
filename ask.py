@@ -17,7 +17,6 @@ STRICT_PROMPT = """Answer the question using only the notes below.
 - Do not add anything that isn't in the notes, and never reverse their meaning.
 - If the notes don't contain the answer, say so.
 - Cite note numbers like [1] after the facts they support.
-- If the question is vague, incomplete, or doesn't ask for specific information, reply only: "Your question is unclear. Could you be more specific?"
 
 CORE PERSONALITY: {core_personality}
 NOTES:

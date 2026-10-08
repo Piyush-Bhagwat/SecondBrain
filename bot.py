@@ -154,6 +154,8 @@ async def allowed(update: Update) -> bool:
     return True
 
 async def save_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    print("received save command:", context.args)
+
     if not await allowed(update):
         return
     # remove the "/save" prefix but keep the rest of the text (including line breaks)
@@ -168,13 +170,15 @@ async def save_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except Exception as e:
         await update.message.reply_text(f"Failed: {e}")
 
-async def ask_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE, mode="strict"):
+async def ask_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE, mode="strict", q=None):
     if not await allowed(update):
         return
-    q = " ".join(context.args).strip()
+    if q is None:                             
+        q = " ".join(context.args or []).strip()
     if not q:
         await update.message.reply_text("Usage: /ask your question")
         return
+    print("received ask command:", q)
     await update.message.reply_text("Thinking...")
     try:
         d = await asyncio.to_thread(call, "/ask", {"question": q, "mode": mode})
@@ -184,12 +188,14 @@ async def ask_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE, mode="stri
         await update.message.reply_text(f"Failed: {e}")
 
 async def think_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    print("received think command:", context.args)
+
     await ask_cmd(update, context, mode="think")
 
 async def plain_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not await allowed(update):
         return
-    await update.message.reply_text("Not saved. Use /save your text, /ask question, or /think request.")
+    await ask_cmd(update, context, mode="strict", q=update.message.text.strip())
 
 app = ApplicationBuilder().token(TOKEN).build()
 app.add_handler(CommandHandler("save", save_cmd))
