@@ -28,6 +28,7 @@ STRICT_PROMPT = """Answer the question using only the notes below.
 - Do not add anything that isn't in the notes, and never reverse their meaning.
 - If the notes don't contain the answer, say so.
 - Cite note numbers like [1] after the facts they support.
+- The answer may need combining facts from the notes (for example, a favorite place answers "where should we go"). Do that, and say which note you used. Only say the notes don't contain it if nothing in them is related.
 
 CORE PERSONALITY: {core_personality}
 NOTES:
@@ -79,6 +80,24 @@ def retrieve(queries, k_each=3, max_distance=0.55):
             if i not in seen and d <= max_distance:
                 seen.add(i)
                 pairs.append((i, d))
+
+    # Knowledge Graph: Follow explicit links (1st degree)
+    graph_links = set()
+    for pid, _ in pairs:
+        try:
+            card = load(pid)
+            for link in card.get("links", []):
+                graph_links.add(link["id"])
+        except:
+            continue
+
+    # Add linked cards to results
+    for lid in graph_links:
+        if lid not in seen:
+            # We don't have a distance for these, so we use a default or a small value
+            pairs.append((lid, 0.5))
+            seen.add(lid)
+
     return pairs
 
 def answer_free(question: str):
@@ -115,6 +134,11 @@ def answer(question: str, k: int = 3, mode: str = "strict"):
     else:
         res = collection.query(query_embeddings=[embed(question, "search_query")], n_results=k)
         pairs = [(i, d) for i, d in zip(res["ids"][0], res["distances"][0]) if d <= MAX_DISTANCE]
+        if pairs:
+            avg_distance = sum(d for _, d in pairs) / len(pairs)
+
+            if avg_distance > 0.30:
+                pairs = pairs[:3]
         if not pairs or min(d for _, d in pairs) > TOP_MAX:
             return {"answer": "Nothing relevant in memory.", "sources": []}
 
@@ -125,7 +149,7 @@ def answer(question: str, k: int = 3, mode: str = "strict"):
 
     if mode == "think":
         logger.info("Calling Gemini for Thinking mode...")
-        text = generate(THINK_PROMPT.format(core_personality=core_personality, date=dt.now(), context=context, question=question))
+        text = generate(THINK_PROMPT.format(core_personality=core_personality, date=dt.now(), context=context, question=question), llm='gemini')
     else:
         logger.info("Calling local LLM for Strict mode...")
         r = client.chat(model=LLM_MODEL,
@@ -152,14 +176,16 @@ Please provide a cohesive, encouraging daily briefing.
 - Keep it concise and formatted for Telegram (use <b>, <i>, <ul>).
 - End with a thoughtful question or a "Connecting the dots" insight.
 """
-    return generate(prompt)
+    return generate(prompt, llm='local')
 
 def find_connection(new_card, existing_cards):
-    """Analyzes a new card against existing ones to find insights."""
+    """Analyzes a new card against existing ones to find insights.
+    Returns a structured link if a connection is found, otherwise None.
+    """
     if not existing_cards:
         return None
 
-    context = "\n\n".join(f"Note [{n+1}]: {c['title']}\n{c['content']}" for n, c in enumerate(existing_cards))
+    context = "\n\n".join(f"Note [{n+1}] {c['title']}\n{c['content']}" for n, c in enumerate(existing_cards))
     prompt = f"""You are an insight agent. A new note was just added to the memory:
 NEW NOTE: {new_card['title']} - {new_card['content']}
 
@@ -167,12 +193,25 @@ EXISTING NOTES:
 {context}
 
 Does the new note connect to, expand, or contradict any of the existing notes in a non-obvious way?
-- If yes, write a one-sentence insight: "Insight: [The connection]".
-- If no, respond with 'NONE'.
+If yes, respond ONLY in the following JSON format:
+{{
+  "link_id": "ID of the most relevant note",
+  "type": "expands" | "contradicts" | "related",
+  "reason": "One sentence explanation of the connection"
+}}
+If no, respond with 'NONE'.
 Be concise. Focus on synthesis.
 """
-    res = generate(prompt)
-    return res if "NONE" not in res.upper() else None
+    res = generate(prompt, llm='local')
+    if "NONE" in res.upper():
+        return None
+    try:
+        # Clean the response in case the LLM adds markdown code blocks
+        cleaned_res = res.strip().strip("```json").strip("```").strip()
+        return json.loads(cleaned_res)
+    except Exception as e:
+        logger.error(f"Failed to parse connection JSON: {e} | Response: {res}")
+        return None
 
 if __name__ == "__main__":
     out = answer(input("Question: "))

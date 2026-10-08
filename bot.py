@@ -207,8 +207,15 @@ async def save_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         d = await asyncio.to_thread(call, "/save", {"text": text, "title": ""})
         msg = f"Saved {d['saved']} card(s):\n" + "\n".join(d["titles"])
-        if "connection" in d:
-            msg += f"\n\n💡 {d['connection']}"
+        if "connection" in d and d["connection"]:
+            conn = d["connection"]
+            if isinstance(conn, dict):
+                # Pretty print the structured connection
+                reason = conn.get("reason", "Related to existing knowledge")
+                msg += f"\n\n💡 {reason}"
+            else:
+                # Fallback for plain string connections
+                msg += f"\n\n💡 {conn}"
         await update.message.reply_text(msg)
     except Exception as e:
         await update.message.reply_text(f"Failed: {e}")

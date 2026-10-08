@@ -73,7 +73,7 @@ async def ask_q(req: AskReq):
     logger.info(f"Ask request [{req.mode}]: {req.question[:50]}...")
 
     # answer() is still sync, running in threadpool
-    res = await asyncio.to_thread(answer, req.question, mode=req.mode, k=5)
+    res = await asyncio.to_thread(answer, req.question, mode=req.mode, k=9)
 
     elapsed = time.time() - start_time
     logger.info(f"Answered in {elapsed:.2f}s")

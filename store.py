@@ -74,6 +74,7 @@ def save(text: str, source: str = "manual", title: str = "", extra: dict = None)
             "meta": extra or {},
             **c.model_dump(),
             "raw_text": chunk,
+            "links": [], # Initialize empty links
         }
         # Sync write to disk
         (CARDS_DIR / f"{card['id']}.json").write_text(json.dumps(card, indent=2, ensure_ascii=False))
@@ -81,6 +82,32 @@ def save(text: str, source: str = "manual", title: str = "", extra: dict = None)
 
     # 3. Batch index into ChromaDB
     index_cards_batch(cards)
+
+    # 4. Knowledge Graph: Automated Linking
+    from ask import retrieve, find_connection
+    for card in cards:
+        # Find similar existing cards
+        similar_pairs = retrieve([card["title"]], k_each=3)
+        if similar_pairs:
+            # Load the actual cards
+            similar_cards = []
+            for pid, dist in similar_pairs:
+                try:
+                    from ask import load
+                    similar_cards.append(load(pid))
+                except:
+                    continue
+
+            connection = find_connection(card, similar_cards)
+            if connection:
+                # connection is now a dict: {"link_id": ..., "type": ..., "reason": ...}
+                card["links"].append({
+                    "id": connection["link_id"],
+                    "type": connection["type"],
+                    "reason": connection["reason"]
+                })
+                # Update the JSON file with links
+                (CARDS_DIR / f"{card['id']}.json").write_text(json.dumps(card, indent=2, ensure_ascii=False))
 
     logger.info(f"Successfully created {len(cards)} cards for doc {doc_id}")
     return cards

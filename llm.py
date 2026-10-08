@@ -63,8 +63,8 @@ GEMINI_KEY = os.getenv("GEMINI_API_KEY")
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
 gem = genai.Client(api_key=GEMINI_KEY) if GEMINI_KEY else None
 
-def generate(prompt: str) -> str:
-    if gem:
+def generate(prompt: str, llm='gemini') -> str:
+    if gem and llm == 'gemini':
         try:
             logger.info("Requesting Gemini generation...")
             r = gem.models.generate_content(model=GEMINI_MODEL, contents=prompt)
