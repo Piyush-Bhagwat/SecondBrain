@@ -8,3 +8,6 @@ chroma_db/
 cards/
 .env
 yt_state.json
+ingest.log
+yt_skipped.log
+

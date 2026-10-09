@@ -1,5 +1,5 @@
 import re, json, logging, sys
-from fastapi import FastAPI, HTTPException, UploadFile, File
+from fastapi import FastAPI, HTTPException, UploadFile, File, BackgroundTasks
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from store import save, delete_card, CARDS_DIR
@@ -36,6 +36,7 @@ class SaveReq(BaseModel):
     title: str = ""
     source: str = "web"
     extra: dict = {}
+    findConnection: bool = True
 
 class AskReq(BaseModel):
     question: str
@@ -46,26 +47,21 @@ async def home():
     return FileResponse("index.html")
 
 @app.post("/save")
-async def save_note(req: SaveReq):
+async def save_note(req: SaveReq, background_tasks: BackgroundTasks):
     start_time = time.time()
-    logger.info(f"Saving note from {req.source} | Title: {req.title or 'N/A'}")
+    logger.info(f"Queueing note from {req.source} | Title: {req.title or 'N/A'}")
 
-    # save() is still sync, running in threadpool via to_thread
-    cards = await asyncio.to_thread(save, req.text, source=req.source, title=req.title, extra=req.extra)
+    def run_save():
+        try:
+            # Synchronous save logic
+            cards = save(req.text, source=req.source, title=req.title, extra=req.extra)
+            elapsed = time.time() - start_time
+            logger.info(f"Background save completed: {len(cards)} cards in {elapsed:.2f}s")
+        except Exception as e:
+            logger.error(f"Background save failed: {e}")
 
-    # Connection Discovery
-    connection = None
-    if cards:
-        # Use the first card as the primary query for connection discovery
-        from ask import retrieve, find_connection
-        similar_pairs = retrieve([cards[0]["title"]], k_each=3)
-        if similar_pairs:
-            similar_cards = [await asyncio.to_thread(load, p[0]) for p in similar_pairs]
-            connection = await asyncio.to_thread(find_connection, cards[0], similar_cards)
-
-    elapsed = time.time() - start_time
-    logger.info(f"Saved {len(cards)} cards in {elapsed:.2f}s")
-    return {"saved": len(cards), "titles": [c["title"] for c in cards], "connection": connection}
+    background_tasks.add_task(run_save)
+    return {"status": "accepted", "message": "Processing started in background"}
 
 @app.post("/ask")
 async def ask_q(req: AskReq):

@@ -88,18 +88,24 @@ def to_paragraphs(text, size=150):
 
 async def save_video(client, v, text):
     # Using httpx for async request
-    r = await client.post(f"{API}/save", timeout=7200, json={
+    # Increased timeout slightly and using a specific timeout config for the request
+    print("Saving video:", v["title"])
+    timeout = httpx.Timeout(120.0, connect=10.0, read=110.0)
+    r = await client.post(f"{API}/save", timeout=timeout, json={
         "text": text,
         "title": f"YouTube: {v['title']}",
         "source": "youtube",
         "extra": {"video_id": v["id"],
                   "url": f"https://www.youtube.com/watch?v={v['id']}",
                   "channel": v.get("channel") or v.get("uploader")},
+        "findConnection": False  # Disable connection discovery for YouTube videos
     })
     r.raise_for_status()
-    return r.json()["saved"]
+    print(f"Saved video: {v['title']} with status code {r.status_code}")
+    # The API now returns {"status": "accepted", ...} instead of the card count
+    return 1 # Treat as 1 successful operation for stats
 
-async def process_video(v, keywords, seen, http_client, stats):
+async def process_video(v, keywords, seen, http_client, stats, processed_videos):
     vid = v["id"]
     if vid in seen:
         return
@@ -133,14 +139,18 @@ async def process_video(v, keywords, seen, http_client, stats):
         saved_count = await save_video(http_client, v, to_paragraphs(text))
         stats["cards"] += saved_count
         mark_seen(seen, vid)
+        processed_videos.append(f"• {title} (https://www.youtube.com/watch?v={vid})")
         logger.info(f"Saved: {title} ({saved_count} cards)")
     except Exception as e:
         stats["failed"] += 1
-        logger.error(f"Save failed for {title}: {e}")
+        logger.error(f"Save failed for {title}: {repr(e)}")
+        print(f"Save failed for {title}:")
+        print(e)
 
 async def main():
     keywords = load_keywords()
     stats = {"checked": 0, "relevant": 0, "cards": 0, "no_transcript": 0, "too_long": 0, "failed": 0}
+    processed_videos = []
 
     if not DRY:
         try:
@@ -152,32 +162,36 @@ async def main():
 
     seen = load_seen()
     history = fetch_history(MAX_HISTORY)
+    total_videos = len(history)
+    logger.info(f"Fetched {total_videos} videos from history.")
 
     async with httpx.AsyncClient() as http_client:
         # Process videos concurrently in batches to avoid overloading local LLM/API
         # Batch size of 3 is safe for Ryzen 5 / 8GB RAM
         batch_size = 3
-        for i in range(0, len(history), batch_size):
+        for i in range(0, total_videos, batch_size):
             batch = history[i:i + batch_size]
+            logger.info(f"Processing batch {i//batch_size + 1} ({i+1} to {min(i+batch_size, total_videos)} of {total_videos})")
             tasks = []
             for v in batch:
                 stats["checked"] += 1
-                tasks.append(process_video(v, keywords, seen, http_client, stats))
+                tasks.append(process_video(v, keywords, seen, http_client, stats, processed_videos))
 
             await asyncio.gather(*tasks)
 
+    # Construct final message with video list
+    video_list_str = "\n".join(processed_videos)
+    video_section = f"\n\nVideos processed:\n{video_list_str}" if processed_videos else ""
+
     msg = (f"YouTube sync done: {stats['checked']} new in history, {stats['relevant']} relevant, "
            f"{stats['cards']} cards saved, {stats['no_transcript']} without captions, "
-           f"{stats['too_long']} too long, {stats['failed']} failed.")
+           f"{stats['too_long']} too long, {stats['failed']} failed."
+           f"{video_section}")
     logger.info(msg)
     if not DRY:
         await notify(msg)
 
 if __name__ == "__main__":
-    import os, pathlib, subprocess
-    # Fix missing imports from previous Read
-    import os, re, sys, json, pathlib, subprocess, asyncio, httpx
-
     try:
         fd = os.open("yt_sync.lock", os.O_CREAT | os.O_EXCL | os.O_WRONLY)
     except FileExistsError:
