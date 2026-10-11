@@ -157,12 +157,12 @@ def split_msg(text: str, limit: int = 4000):
         parts.append(cur)
     return parts
 
-async def send(update: Update, text: str):
+async def send(update: Update, text: str, reply_markup=None):
     for chunk in split_msg(text):
         try:
-            await update.message.reply_text(to_tg_html(chunk), parse_mode="HTML")
+            await update.message.reply_text(to_tg_html(chunk), parse_mode="HTML", reply_markup=reply_markup)
         except Exception:
-            await update.message.reply_text(chunk)   # plain text fallback
+            await update.message.reply_text(chunk, reply_markup=reply_markup)   # plain text fallback
 
 def call_pdf(path):
     with open(path, "rb") as f:
@@ -292,14 +292,101 @@ async def review_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(f"Failed to review: {e}")
 
 
+async def connect_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not await allowed(update):
+        return
+    q = " ".join(context.args or []).strip()
+    if not q:
+        await update.message.reply_text("Usage: /connect How does X relate to Y?")
+        return
+    await update.message.reply_text("Searching for connections...")
+    try:
+        d = await asyncio.to_thread(call, "/connect", {"query": q})
+        synthesis = d.get("synthesis", "No clear connection found.")
+
+        # Store suggested links in bot_data to preserve reasons
+        links = d.get("suggested_links", [])
+        if links:
+            msg_id = update.message.message_id # approx
+            # Since we are replying, we use a key based on the conversation/timestamp
+            # but better to just use a unique ID for this specific session
+            session_id = uuid.uuid4().hex[:8]
+            context.bot_data.setdefault("links", {})[session_id] = links
+
+            # Create buttons
+            keyboard = []
+            for i, l in enumerate(links):
+                # Use titles for better labels
+                try:
+                    from ask import load
+                    from_t = load(l['from']).get('title', l['from'])
+                    to_t = load(l['to']).get('title', l['to'])
+                    label = f"🔗 {from_t} → {to_t}"
+                except:
+                    label = f"🔗 Link {i+1}"
+
+                keyboard.append([InlineKeyboardButton(
+                    label,
+                    callback_data=f"ln:{session_id}:{i}"
+                )])
+
+            reply_markup = InlineKeyboardMarkup(keyboard)
+            await send(update, f"<b>Connection Synthesis:</b>\n\n{synthesis}", reply_markup=reply_markup)
+        else:
+            await send(update, f"<b>Connection Synthesis:</b>\n\n{synthesis}")
+
+    except Exception as e:
+        await update.message.reply_text(f"Failed: {e}")
+
+async def handle_link_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    q = update.callback_query
+    if q.from_user.id != ALLOWED:
+        await q.answer("Not authorized", show_alert=True)
+        return
+
+    # Data format: ln:session_id:index
+    try:
+        _, session_id, idx = q.data.split(":")
+        idx = int(idx)
+        links = context.bot_data.get("links", {}).get(session_id)
+        if not links or idx >= len(links):
+            await q.answer("Link expired or not found.", show_alert=True)
+            return
+
+        link = links[idx]
+        # Call the API to create the link
+        d = await asyncio.to_thread(call, "/link", {
+            "from_id": link["from"],
+            "to_id": link["to"],
+            "type": link["type"],
+            "reason": link["reason"]
+        })
+
+        # Try to get titles for better readability
+        from ask import load
+        try:
+            from_title = load(link["from"]).get("title", link["from"])
+            to_title = load(link["to"]).get("title", link["to"])
+            link_text = f"{from_title} → {to_title}"
+        except:
+            link_text = f"{link['from']} → {link['to']}"
+
+        await q.answer("Link created!")
+        await q.edit_message_text(f"✅Link created: {link_text}\n\n{link['reason']}")
+
+    except Exception as e:
+        await q.answer(f"Error: {e}", show_alert=True)
+
 app = ApplicationBuilder().token(TOKEN).build()
 app.add_handler(CommandHandler("save", save_cmd))
 app.add_handler(CommandHandler("sync_youtube", sync_youtube_cmd))
 app.add_handler(CommandHandler("ask", ask_cmd))
+app.add_handler(CommandHandler("connect", connect_cmd))
 app.add_handler(CommandHandler("free", free_cmd))
 app.add_handler(CommandHandler("think", think_cmd))
 app.add_handler(CommandHandler("brief", brief_cmd))
 app.add_handler(CommandHandler("review", review_cmd))
+app.add_handler(CallbackQueryHandler(handle_link_callback, pattern=r"^ln:"))
 app.add_handler(CallbackQueryHandler(voice_confirm, pattern=r"^v[sd]:"))
 app.add_handler(MessageHandler(filters.VOICE | filters.AUDIO, voice_msg))
 app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, plain_text))

@@ -41,7 +41,18 @@ class AskReq(BaseModel):
     question: str
     mode: str = "strict"
 
+class ConnectReq(BaseModel):
+    query: str
+
+class LinkReq(BaseModel):
+    from_id: str
+    to_id: str
+    type: str
+    reason: str
+
 @app.get("/")
+
+
 async def home():
     return FileResponse("index.html")
 
@@ -53,19 +64,9 @@ async def save_note(req: SaveReq):
     # save() is still sync, running in threadpool via to_thread
     cards = await asyncio.to_thread(save, req.text, source=req.source, title=req.title, extra=req.extra)
 
-    # Connection Discovery
-    connection = None
-    if cards:
-        # Use the first card as the primary query for connection discovery
-        from ask import retrieve, find_connection
-        similar_pairs = retrieve([cards[0]["title"]], k_each=3)
-        if similar_pairs:
-            similar_cards = [await asyncio.to_thread(load, p[0]) for p in similar_pairs]
-            connection = await asyncio.to_thread(find_connection, cards[0], similar_cards)
-
     elapsed = time.time() - start_time
     logger.info(f"Saved {len(cards)} cards in {elapsed:.2f}s")
-    return {"saved": len(cards), "titles": [c["title"] for c in cards], "connection": connection}
+    return {"saved": len(cards), "titles": [c["title"] for c in cards]}
 
 @app.post("/ask")
 async def ask_q(req: AskReq):
@@ -159,3 +160,51 @@ async def get_review():
     logger.info("Picking random card for review...")
     card = await asyncio.to_thread(get_random_card)
     return {"card": card}
+
+@app.post("/connect")
+async def connect_topics(req: ConnectReq):
+    start_time = time.time()
+    logger.info(f"Connection request: {req.query[:50]}...")
+
+    from ask import split_concepts, synthesize_connection, retrieve, load
+
+    # 1. Split query into concepts
+    concepts = await asyncio.to_thread(split_concepts, req.query)
+    ca, cb = concepts.get("concept_a"), concepts.get("concept_b")
+
+    # 2. Retrieve cards for both
+    pairs_a = retrieve([ca], k_each=3) if ca else []
+    pairs_b = retrieve([cb], k_each=3) if cb else []
+
+    cards_a = []
+    for p in pairs_a:
+        c = await asyncio.to_thread(load, p[0])
+        if c: cards_a.append(c)
+
+    cards_b = []
+    for p in pairs_b:
+        c = await asyncio.to_thread(load, p[0])
+        if c: cards_b.append(c)
+
+    # 3. Synthesize
+    res = await asyncio.to_thread(synthesize_connection, ca, cards_a, cb, cards_b)
+
+    elapsed = time.time() - start_time
+    logger.info(f"Connected in {elapsed:.2f}s")
+    return res
+
+@app.post("/link")
+async def add_link(req: LinkReq):
+    from store import create_link
+    logger.info(f"Adding link: {req.from_id} -> {req.to_id} ({req.type})")
+    success, msg = await asyncio.to_thread(create_link, req.from_id, req.to_id, req.type, req.reason)
+    if not success and "already exists" not in msg:
+        logger.error(f"Failed to add link: {msg}")
+        raise HTTPException(404, msg)
+
+    if "already exists" in msg:
+        logger.info(f"Link already existed: {req.from_id} -> {req.to_id}")
+    else:
+        logger.info(f"Successfully added link: {req.from_id} -> {req.to_id}")
+
+    return {"success": success, "message": msg}

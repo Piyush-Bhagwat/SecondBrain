@@ -70,7 +70,11 @@ MESSAGE: {question}"""
 @lru_cache(maxsize=128)
 def load(card_id):
     # Cached JSON loading to avoid repeated disk reads for common cards
-    return json.loads((CARDS_DIR / f"{card_id}.json").read_text())
+    try:
+        return json.loads((CARDS_DIR / f"{card_id}.json").read_text())
+    except FileNotFoundError:
+        logger.error(f"Card not found: {card_id}")
+        return None
 
 def retrieve(queries, k_each=3, max_distance=0.55):
     seen, pairs = set(), []
@@ -100,7 +104,57 @@ def retrieve(queries, k_each=3, max_distance=0.55):
 
     return pairs
 
+def split_concepts(query: str):
+    """Splits a connection query into two distinct concepts to search for."""
+    prompt = f"""Extract the two main concepts being compared or connected in this query.
+    Respond ONLY in JSON format: {{"concept_a": "...", "concept_b": "..."}}
+    Query: {query}
+    """
+    res = generate(prompt, llm='local')
+    try:
+        cleaned = res.strip().strip("```json").strip("```").strip()
+        return json.loads(cleaned)
+    except:
+        return {"concept_a": query, "concept_b": ""}
+
+def synthesize_connection(concept_a: str, cards_a: list, concept_b: str, cards_b: list):
+    """Finds the non-obvious bridge between two sets of notes."""
+    if not cards_a or not cards_b:
+        return "I could only find information on one of these topics, so I can't draw a connection."
+
+    ctx_a = "\\n\\n".join(f"[{c['id']}] {c['title']}: {c['content']}" for c in cards_a)
+    ctx_b = "\\n\\n".join(f"[{c['id']}] {c['title']}: {c['content']}" for c in cards_b)
+
+    prompt = f"""You are a synthesis engine. Find the non-obvious bridge between these two sets of notes.
+
+    TOPIC A ({concept_a}):
+    {ctx_a}
+
+    TOPIC B ({concept_b}):
+    {ctx_b}
+
+    1. Analyze how Topic A informs, contradicts, or relates to Topic B.
+    2. Provide a concise synthesis (1-2 paragraphs) that explains the conceptual link.
+    3. Suggest 1-2 explicit links between specific cards if a strong relationship exists.
+
+    Respond ONLY in this JSON format:
+    {{
+      "synthesis": "The detailed explanation...",
+      "suggested_links": [
+        {{"from": "card_id_a", "to": "card_id_b", "type": "related", "reason": "..."}}
+      ]
+    }}
+    """
+    res = generate(prompt, llm='local')
+    try:
+        cleaned = res.strip().strip("```json").strip("```").strip()
+        return json.loads(cleaned)
+    except Exception as e:
+        logger.error(f"Synthesis failed: {e}")
+        return {"synthesis": "Failed to synthesize a connection.", "suggested_links": []}
+
 def answer_free(question: str):
+
     logger.info(f"Processing free answer: {question[:50]}...")
     res = collection.query(query_embeddings=[embed(question, "search_query")], n_results=3)
     pairs = [(i, d) for i, d in zip(res["ids"][0], res["distances"][0]) if d <= 0.45]
@@ -179,28 +233,29 @@ Please provide a cohesive, encouraging daily briefing.
     return generate(prompt, llm='local')
 
 def find_connection(new_card, existing_cards):
-    """Analyzes a new card against existing ones to find insights.
+    """Analyzes a new card against existing ones to find synthesis-level insights.
     Returns a structured link if a connection is found, otherwise None.
     """
     if not existing_cards:
         return None
 
-    context = "\n\n".join(f"Note [{n+1}] {c['title']}\n{c['content']}" for n, c in enumerate(existing_cards))
-    prompt = f"""You are an insight agent. A new note was just added to the memory:
+    context = "\\n\\n".join(f"Note [{n+1}] {c['title']}\\n{c['content']}" for n, c in enumerate(existing_cards))
+    prompt = f"""You are a synthesis engine. A new note was just added to the memory:
 NEW NOTE: {new_card['title']} - {new_card['content']}
 
 EXISTING NOTES:
 {context}
 
 Does the new note connect to, expand, or contradict any of the existing notes in a non-obvious way?
+Look for conceptual bridges, thematic overlaps, or contradictions that provide a new insight.
 If yes, respond ONLY in the following JSON format:
 {{
   "link_id": "ID of the most relevant note",
   "type": "expands" | "contradicts" | "related",
-  "reason": "One sentence explanation of the connection"
+  "reason": "One sentence explanation of the synthesis/insight"
 }}
 If no, respond with 'NONE'.
-Be concise. Focus on synthesis.
+Be concise. Focus on synthesis over simple similarity.
 """
     res = generate(prompt, llm='local')
     if "NONE" in res.upper():

@@ -52,6 +52,40 @@ def index_cards_batch(cards: list[dict]):
         metadatas=[{"source": c["source"]} for c in cards],
     )
 
+def write_card(card: dict):
+    """Centralized utility to write a card to disk."""
+    (CARDS_DIR / f"{card['id']}.json").write_text(json.dumps(card, indent=2, ensure_ascii=False))
+
+def create_link(from_id, to_id, link_type, reason):
+    """Creates an explicit link from one card to another. Ensures idempotency."""
+    from ask import load
+    try:
+        card = load(from_id)
+    except Exception:
+        return False, "Source card not found"
+
+    if not card:
+        return False, "Source card not found"
+
+    # Idempotency check: don't add the same link twice
+    if any(link["id"] == to_id for link in card.get("links", [])):
+        return True, "Link already exists"
+
+    # Create the link object
+    new_link = {
+        "id": to_id,
+        "type": link_type,
+        "reason": reason
+    }
+
+    # Ensure links list exists
+    if "links" not in card:
+        card["links"] = []
+
+    card["links"].append(new_link)
+    write_card(card)
+    return True, "Link created successfully"
+
 def save(text: str, source: str = "manual", title: str = "", extra: dict = None):
     doc_id = uuid.uuid4().hex[:12]
     cards = []
@@ -77,7 +111,7 @@ def save(text: str, source: str = "manual", title: str = "", extra: dict = None)
             "links": [], # Initialize empty links
         }
         # Sync write to disk
-        (CARDS_DIR / f"{card['id']}.json").write_text(json.dumps(card, indent=2, ensure_ascii=False))
+        write_card(card)
         cards.append(card)
 
     # 3. Batch index into ChromaDB
@@ -107,7 +141,7 @@ def save(text: str, source: str = "manual", title: str = "", extra: dict = None)
                     "reason": connection["reason"]
                 })
                 # Update the JSON file with links
-                (CARDS_DIR / f"{card['id']}.json").write_text(json.dumps(card, indent=2, ensure_ascii=False))
+                write_card(card)
 
     logger.info(f"Successfully created {len(cards)} cards for doc {doc_id}")
     return cards
