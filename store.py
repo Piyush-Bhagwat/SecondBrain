@@ -56,6 +56,74 @@ def write_card(card: dict):
     """Centralized utility to write a card to disk."""
     (CARDS_DIR / f"{card['id']}.json").write_text(json.dumps(card, indent=2, ensure_ascii=False))
 
+def get_due_card():
+    """Retrieves a card that is due for review. Fallback to random if none are due."""
+    import datetime
+    now = datetime.datetime.now().isoformat()
+    due_cards = []
+
+    for f in CARDS_DIR.glob("*.json"):
+        try:
+            c = json.loads(f.read_text())
+            next_review = c.get("srs_next_review")
+            # If it has no review date, it's overdue by definition
+            if not next_review or next_review <= now:
+                due_cards.append(c)
+        except Exception as e:
+            logger.error(f"Error reading card {f.name}: {e}")
+            continue
+
+    if due_cards:
+        # Return the one most overdue (oldest next_review date)
+        # Use a very large date for cards with no next_review so they are processed last
+        # unless you want new cards first. Usually, we want the most overdue.
+        return min(due_cards, key=lambda x: x.get("srs_next_review") or "9999")
+
+    return get_random_card()
+
+def update_srs(card_id: str, rating: str):
+    """
+    Updates SRS metadata based on rating (Easy, Good, Hard).
+    Simplified SM-2 algorithm.
+    """
+    import datetime
+    from ask import load
+    try:
+        card = load(card_id)
+    except:
+        return False, "Card not found"
+
+    if not card:
+        return False, "Card not found"
+
+    # Initial values
+    interval = card.get("srs_interval", 0)
+    ease = card.get("srs_ease", 2.5)
+
+    # Rating logic
+    if rating == "Hard":
+        interval = 1
+        ease = max(1.3, ease - 0.2)
+    elif rating == "Good":
+        interval = interval * 1.5 if interval > 0 else 1
+        ease = ease
+    elif rating == "Easy":
+        interval = interval * 2.0 if interval > 0 else 4
+        ease = ease + 0.1
+    else:
+        return False, "Invalid rating"
+
+    # Calculate next review date
+    days = int(round(interval))
+    next_date = datetime.datetime.now() + datetime.timedelta(days=days)
+
+    card["srs_interval"] = interval
+    card["srs_ease"] = ease
+    card["srs_next_review"] = next_date.isoformat(timespec="seconds")
+
+    write_card(card)
+    return True, f"Next review in {days} day(s)"
+
 def create_link(from_id, to_id, link_type, reason):
     """Creates an explicit link from one card to another. Ensures idempotency."""
     from ask import load

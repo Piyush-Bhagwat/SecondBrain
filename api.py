@@ -156,10 +156,52 @@ async def get_briefing():
 
 @app.get("/review")
 async def get_review():
-    from store import get_random_card
-    logger.info("Picking random card for review...")
-    card = await asyncio.to_thread(get_random_card)
-    return {"card": card}
+    from store import get_due_card
+    logger.info("Fetching due card for Active Recall...")
+    card = await asyncio.to_thread(get_due_card)
+    if not card:
+        return {"error": "No cards available"}
+
+    from ask import generate_quiz_question
+    question = await asyncio.to_thread(generate_quiz_question, card)
+    return {"card_id": card["id"], "question": question}
+
+@app.post("/review/evaluate")
+async def evaluate_review(req: dict):
+    # req: {"card_id": "...", "answer": "..."}
+    from ask import load, evaluate_answer
+    from store import update_srs
+
+    card_id = req.get("card_id")
+    user_answer = req.get("answer")
+
+    card = await asyncio.to_thread(load, card_id)
+    if not card:
+        raise HTTPException(404, "Card not found")
+
+    # 1. Evaluate answer
+    from ask import generate_quiz_question
+    # We need the question to evaluate properly, but the LLM can judge based on content
+    # To be precise, let's pass the content
+    evaluation = await asyncio.to_thread(evaluate_answer, "Recall question", user_answer, card["content"])
+
+    return {
+        "evaluation": evaluation,
+        "content": card["content"],
+        "title": card["title"]
+    }
+
+@app.post("/review/rate")
+async def rate_review(req: dict):
+    # req: {"card_id": "...", "rating": "Easy" | "Good" | "Hard"}
+    from store import update_srs
+    card_id = req.get("card_id")
+    rating = req.get("rating")
+
+    success, msg = await asyncio.to_thread(update_srs, card_id, rating)
+    if not success:
+        raise HTTPException(400, msg)
+    return {"message": msg}
 
 @app.post("/connect")
 async def connect_topics(req: ConnectReq):

@@ -19,7 +19,7 @@ Cogni is a personal knowledge management system (a "Second Brain") that allows t
   - `/think`: A more reasoned approach to querying knowledge.
   - `/free`: Free-form response handling.
   - `/brief`: Generates a daily briefing of stored info.
-  - `/review`: A "memory jogger" to surface random cards for review.
+  - `/review`: An Active Recall system using Spaced Repetition (SRS) to quiz the user on stored knowledge and schedule reviews based on performance.
   - `/connect`: Synthesizes connections between two different topics and suggests explicit links to build the knowledge graph.
 
 ## Technical Stack
@@ -47,8 +47,5 @@ Cogni is a personal knowledge management system (a "Second Brain") that allows t
    - Browser Extension for quick clipping.
    - Image-to-Knowledge (OCR) for handwritten notes or screenshots.
 
-2. **"Active Recall" & Spaced Repetition (The Learning Loop)**
-   - Implement a Spaced Repetition System (SRS) to push stored info back into the user's active memory.
-
-3. **Autonomous "Knowledge Curator" (The Nightly Process)**
+2. **Autonomous "Knowledge Curator" (The Nightly Process)**
    - Automated clustering of cards into topics and gap detection in the knowledge base.

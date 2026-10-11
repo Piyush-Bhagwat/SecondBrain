@@ -153,6 +153,38 @@ def synthesize_connection(concept_a: str, cards_a: list, concept_b: str, cards_b
         logger.error(f"Synthesis failed: {e}")
         return {"synthesis": "Failed to synthesize a connection.", "suggested_links": []}
 
+def generate_quiz_question(card: dict):
+    """Generates a challenging question based on a card's content."""
+    prompt = f"""You are a learning assistant. Based on the note below, create a challenging question that tests the core concept.
+    Do NOT include the answer in the question.
+
+    NOTE:
+    Title: {card['title']}
+    Content: {card['content']}
+
+    Question:"""
+    return generate(prompt, llm='local')
+
+def evaluate_answer(question: str, user_answer: str, content: str):
+    """Evaluates a user's answer against the original content."""
+    prompt = f"""You are an expert evaluator. Compare the user's answer to the correct content.
+
+    QUESTION: {question}
+    USER ANSWER: {user_answer}
+    CORRECT CONTENT: {content}
+
+    Evaluate if the answer is 'Correct', 'Partial', or 'Wrong'.
+    Provide a brief (1 sentence) explanation of why.
+
+    Respond ONLY in JSON format: {{"verdict": "Correct" | "Partial" | "Wrong", "explanation": "..."}}
+    """
+    res = generate(prompt, llm='local')
+    try:
+        cleaned = res.strip().strip("```json").strip("```").strip()
+        return json.loads(cleaned)
+    except:
+        return {"verdict": "Wrong", "explanation": "Could not evaluate answer."}
+
 def answer_free(question: str):
 
     logger.info(f"Processing free answer: {question[:50]}...")

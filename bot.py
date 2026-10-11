@@ -246,6 +246,10 @@ async def plain_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not await allowed(update):
         return
 
+    if context.user_data.get("quiz_card_id"):
+        await handle_quiz_answer(update, context)
+        return
+
     text = update.message.text.strip()
 
     # Detect URL
@@ -280,16 +284,73 @@ async def brief_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def review_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not await allowed(update):
         return
+    await update.message.reply_text("Preparing your Active Recall challenge...")
     try:
         d = await asyncio.to_thread(call, "/review", {}, type="get")
-        if not d.get("card"):
-            await update.message.reply_text("No cards found in memory.")
+        if "error" in d:
+            await update.message.reply_text(d["error"])
             return
-        card = d["card"]
-        msg = f"<b>Memory Jogger:</b>\n\n<i>{card['title']}</i>\n\n{card['content']}"
-        await send(update, msg)
+        card_id = d["card_id"]
+        question = d["question"]
+
+        # Store state
+        context.user_data["quiz_card_id"] = card_id
+
+        await update.message.reply_text(f"<b>Quiz Time!</b>\n\n{question}\n\n(Reply to this message with your answer)")
     except Exception as e:
-        await update.message.reply_text(f"Failed to review: {e}")
+        await update.message.reply_text(f"Failed to start review: {e}")
+
+async def handle_quiz_answer(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not await allowed(update):
+        return
+
+    card_id = context.user_data.get("quiz_card_id")
+    if not card_id:
+        return # Not in a quiz
+
+    user_answer = update.message.text
+    await update.message.reply_text("Evaluating your answer...")
+
+    try:
+        res = await asyncio.to_thread(call, "/review/evaluate", {"card_id": card_id, "answer": user_answer})
+
+        evaluation = res["evaluation"]
+        content = res["content"]
+        title = res["title"]
+
+        # Feedback message
+        msg = f"<b>Verdict: {evaluation['verdict']}</b>\n{evaluation['explanation']}\n\n"
+        msg += f"<b>Correct Info ({title}):</b>\n{content}"
+        await send(update, msg)
+
+        # Rating buttons
+        keyboard = [[
+            InlineKeyboardButton("🔴 Hard", callback_data=f"rate:Hard:{card_id}"),
+            InlineKeyboardButton("🟡 Good", callback_data=f"rate:Good:{card_id}"),
+            InlineKeyboardButton("🟢 Easy", callback_data=f"rate:Easy:{card_id}"),
+        ]]
+        reply_markup = InlineKeyboardMarkup(keyboard)
+        await update.message.reply_text("How difficult was this to recall?", reply_markup=reply_markup)
+
+        # Clear quiz state
+        context.user_data["quiz_card_id"] = None
+
+    except Exception as e:
+        await update.message.reply_text(f"Failed to evaluate: {e}")
+
+async def handle_rating_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    q = update.callback_query
+    if q.from_user.id != ALLOWED:
+        await q.answer("Not authorized", show_alert=True)
+        return
+
+    _, rating, card_id = q.data.split(":")
+    try:
+        d = await asyncio.to_thread(call, "/review/rate", {"card_id": card_id, "rating": rating})
+        await q.answer(d["message"])
+        await q.edit_message_text(f"Recorded as {rating}. {d['message']}")
+    except Exception as e:
+        await q.answer(f"Error: {e}", show_alert=True)
 
 
 async def connect_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -386,6 +447,9 @@ app.add_handler(CommandHandler("free", free_cmd))
 app.add_handler(CommandHandler("think", think_cmd))
 app.add_handler(CommandHandler("brief", brief_cmd))
 app.add_handler(CommandHandler("review", review_cmd))
+# Added: Handle SRS rating buttons
+app.add_handler(CallbackQueryHandler(handle_rating_callback,
+pattern=r"^rate:"))
 app.add_handler(CallbackQueryHandler(handle_link_callback, pattern=r"^ln:"))
 app.add_handler(CallbackQueryHandler(voice_confirm, pattern=r"^v[sd]:"))
 app.add_handler(MessageHandler(filters.VOICE | filters.AUDIO, voice_msg))
