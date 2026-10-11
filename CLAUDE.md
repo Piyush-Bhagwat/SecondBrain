@@ -46,6 +46,3 @@ Cogni is a personal knowledge management system (a "Second Brain") that allows t
 1. **Multi-Modal "Capture" Expansion (Browser Ext & OCR)**
    - Browser Extension for quick clipping.
    - Image-to-Knowledge (OCR) for handwritten notes or screenshots.
-
-2. **Autonomous "Knowledge Curator" (The Nightly Process)**
-   - Automated clustering of cards into topics and gap detection in the knowledge base.

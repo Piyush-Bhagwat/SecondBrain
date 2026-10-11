@@ -262,7 +262,25 @@ Please provide a cohesive, encouraging daily briefing.
 - Keep it concise and formatted for Telegram (use <b>, <i>, <ul>).
 - End with a thoughtful question or a "Connecting the dots" insight.
 """
-    return generate(prompt, llm='local')
+    # We'll inject the curator's gaps here
+    briefing = generate(prompt, llm='local')
+
+    try:
+        import json
+        with open("gaps.json", "r", encoding="utf-8") as f:
+            gaps_data = json.load(f)
+        if gaps_data:
+            # Pick 1-2 random gaps to suggest
+            import random
+            sample_gaps = random.sample(gaps_data, min(len(gaps_data), 2))
+            gap_msg = "\n\n<b>🌱 Growth Opportunities:</b>\n"
+            for g in sample_gaps:
+                gap_msg += f"• In <i style='color:gray'>{g['category']}</i>: {', '.join(g['gaps'])}\n"
+            briefing += gap_msg
+    except Exception:
+        pass
+
+    return briefing
 
 def find_connection(new_card, existing_cards):
     """Analyzes a new card against existing ones to find synthesis-level insights.

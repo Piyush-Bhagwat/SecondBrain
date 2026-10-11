@@ -251,6 +251,50 @@ def get_recent_cards(hours: int = 24):
             continue
     return recent
 
+def update_card_category(card_id: str, category: str):
+    """Updates only the category of a card. Idempotent."""
+    from ask import load
+    try:
+        card = load(card_id)
+        if not card:
+            return False
+        card["category"] = category
+        write_card(card)
+        return True
+    except Exception as e:
+        logger.error(f"Failed to update category for {card_id}: {e}")
+        return False
+
+def update_card_metadata_batch(updates: list[dict]):
+    """
+    Batch update card metadata (e.g., categories).
+    Expects: [{"id": "card-1", "category": "AI"}, {"id": "card-2", "category": "Health"}]
+    """
+    from ask import load
+    for update in updates:
+        card_id = update.get("id")
+        category = update.get("category")
+        if card_id and category:
+            update_card_category(card_id, category)
+            # Also update ChromaDB metadata to keep it searchable
+            try:
+                collection.update(
+                    ids=[card_id],
+                    metadatas=[{"source": load(card_id).get("source", "unknown"), "category": category}]
+                )
+            except Exception as e:
+                logger.error(f"ChromaDB metadata update failed for {card_id}: {e}")
+
+def load_all_cards():
+    """Utility to return all cards from the cards directory."""
+    cards = []
+    for f in CARDS_DIR.glob("*.json"):
+        try:
+            cards.append(json.loads(f.read_text()))
+        except Exception as e:
+            logger.error(f"Error loading card {f.name}: {e}")
+    return cards
+
 def get_random_card():
     """Picks a random card from the library."""
     files = list(CARDS_DIR.glob("*.json"))
@@ -258,4 +302,5 @@ def get_random_card():
         return None
     f = random.choice(files)
     return json.loads(f.read_text())
+
 
