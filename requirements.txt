@@ -1,0 +1,14 @@
+# google: ambiguous - could be grpc-google-iam-v1, google-resumable-media, google-cloud-appengine-logging, google-cloud-bigquery-storage, google-cloud-audit-log, google-cloud-core, googleapis-common-protos, google-cloud-secret-manager, google-cloud-spanner, google-api-core
+aiofiles==25.1.0
+chromadb==1.5.9
+fastapi==0.142.2
+faster_whisper==1.2.1
+httpx==0.28.1
+ollama==0.6.3
+pydantic==2.13.5
+pypdf2==3.0.1
+python_telegram_bot==22.8
+python-dotenv==1.2.4
+requests==2.34.2
+trafilatura==2.3.1
+youtube_transcript_api==1.2.4
