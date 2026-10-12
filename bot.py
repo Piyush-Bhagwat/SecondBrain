@@ -44,6 +44,34 @@ async def voice_msg(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
     m = update.message
 
+    # Handle Photos (OCR)
+    if m.photo:
+        await m.reply_text("Reading image...")
+        try:
+            tg_file = await m.photo[-1].get_file()
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as tmp:
+                await tg_file.download_to_drive(tmp.name)
+                tmp_path = tmp.name
+
+            from llm import extract_text_from_image
+            text = await asyncio.to_thread(extract_text_from_image, tmp_path)
+
+            if not text:
+                await m.reply_text("Couldn't extract any text from the image.")
+                os.remove(tmp_path)
+                return
+
+            d = await asyncio.to_thread(call, "/save", {
+                "text": text, "title": "Image Capture", "source": "telegram-ocr", "extra": {"image_path": tmp_path}
+            })
+            await m.reply_text(f"Saved {d['saved']} card(s) from image:\n" + "\n".join(d["titles"]))
+            os.remove(tmp_path)
+            return
+        except Exception as e:
+            import traceback; traceback.print_exc()
+            await m.reply_text(f"Failed to process image: {e}")
+            return
+
     # Handle Document (PDF) uploads
     if m.document:
         if m.document.mime_type == "application/pdf":
@@ -452,6 +480,6 @@ app.add_handler(CallbackQueryHandler(handle_rating_callback,
 pattern=r"^rate:"))
 app.add_handler(CallbackQueryHandler(handle_link_callback, pattern=r"^ln:"))
 app.add_handler(CallbackQueryHandler(voice_confirm, pattern=r"^v[sd]:"))
-app.add_handler(MessageHandler(filters.VOICE | filters.AUDIO, voice_msg))
+app.add_handler(MessageHandler(filters.VOICE | filters.AUDIO | filters.PHOTO, voice_msg))
 app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, plain_text))
 app.run_polling()

@@ -2,12 +2,16 @@ from dotenv import load_dotenv
 load_dotenv()
 import os, logging, sys
 import ollama
+import easyocr
 
 # Setup logging
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
-    handlers=[logging.StreamHandler(sys.stdout)]
+    handlers=[
+        logging.StreamHandler(sys.stdout),
+        logging.FileHandler("llm.log")
+    ]
 )
 logger = logging.getLogger("cogni-llm")
 
@@ -16,6 +20,9 @@ from schema import Card
 
 client = ollama.Client(host=os.getenv("OLLAMA_HOST", "http://localhost:11434"))
 LLM_MODEL = os.getenv("COGNI_LLM", "qwen2.5:3b-instruct")
+
+# Global EasyOCR reader to avoid re-downloading/re-initializing on every call
+_ocr_reader = None
 
 SYSTEM = """You turn a piece of text into ONE knowledge card for a personal memory.
 
@@ -58,6 +65,22 @@ def extract_card(text: str, doc_title: str = ""):
         logger.error(f"Extraction failed: {e}")
         # Fallback simple card
         return Card(title="Extracted Note", content=text, tags=[])
+
+def extract_text_from_image(image_path: str):
+    global _ocr_reader
+    logger.info(f"Performing OCR on {image_path}...")
+    try:
+        if _ocr_reader is None:
+            logger.info("Initializing EasyOCR reader...")
+            _ocr_reader = easyocr.Reader(['en'])
+
+        result = _ocr_reader.readtext(image_path, detail=0)
+        text = " ".join(result)
+        logger.info(f"OCR completed. Extracted {len(text)} chars.")
+        return text
+    except Exception as e:
+        logger.error(f"OCR failed: {e}")
+        return None
 
 GEMINI_KEY = os.getenv("GEMINI_API_KEY")
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
