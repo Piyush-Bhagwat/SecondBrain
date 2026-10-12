@@ -13,7 +13,6 @@ import uuid
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import CallbackQueryHandler
 
-
 _whisper = None
 TOKEN = os.environ["TELEGRAM_TOKEN"]
 ALLOWED = int(os.environ["ALLOWED_USER_ID"])
@@ -37,7 +36,6 @@ def confirm_kb(key: str):
         InlineKeyboardButton("Save", callback_data=f"vs:{key}"),
         InlineKeyboardButton("Discard", callback_data=f"vd:{key}"),
     ]])
-
 
 async def voice_msg(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not await allowed(update):
@@ -379,7 +377,6 @@ async def handle_rating_callback(update: Update, context: ContextTypes.DEFAULT_T
         await q.edit_message_text(f"Recorded as {rating}. {d['message']}")
     except Exception as e:
         await q.answer(f"Error: {e}", show_alert=True)
-
 
 async def connect_cmd(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not await allowed(update):
